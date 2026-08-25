@@ -218,7 +218,11 @@
     background:rgba(255,255,255,0.06);
     border:1px solid rgba(255,255,255,0.16);
     color:var(--text-dim);
-    white-space:nowrap;
+    white-space:normal;
+    max-width:100%;
+  }
+  @media(max-width:400px){
+    .hero-trust span{font-size:0.72rem;padding:7px 12px;}
   }
   .hero-catalog-link{margin-top:30px;display:inline-flex;}
 
@@ -637,7 +641,7 @@
     font-size:0.8rem;color:var(--steel);
   }
   footer a:hover{color:var(--fire-1);}
-  .foot-links{display:flex;gap:24px;}
+  .foot-links{display:flex;flex-wrap:wrap;gap:16px 24px;}
 
   /* WhatsApp floating button */
   .wa-float{
@@ -672,6 +676,8 @@
   .discount-modal{
     position:relative;
     width:100%;max-width:420px;
+    max-height:calc(100svh - 48px);
+    overflow-y:auto;
     padding:40px 32px 34px;
     text-align:center;
     border-radius:16px;

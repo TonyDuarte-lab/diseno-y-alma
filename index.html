@@ -343,24 +343,50 @@
   }
   .btn-ghost:hover{border-color:var(--fire-2);color:var(--fire-1);transform:translateY(-3px);background:rgba(255,122,26,0.08);}
 
-  .scroll-cue{
-    position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
-    z-index:3;
-    width:22px;height:36px;border:1px solid rgba(245,236,221,0.35);border-radius:12px;
-  }
-  .scroll-cue::before{
-    content:'';position:absolute;top:6px;left:50%;transform:translateX(-50%);
-    width:3px;height:8px;border-radius:2px;background:var(--fire-1);
-    animation:scrollDot 1.8s ease-in-out infinite;
-  }
-  @keyframes scrollDot{0%{opacity:1;top:6px;}70%{opacity:0;top:18px;}100%{opacity:0;top:6px;}}
-
   /* ---------- SECTION SHARED ---------- */
   section{position:relative;padding:120px 6vw;scroll-margin-top:114px;}
   .section-head{max-width:640px;margin-bottom:64px;}
   .section-head .eyebrow{margin-bottom:16px;}
   .section-head h2{font-size:clamp(1.8rem,4vw,3rem);line-height:1.05;}
   .section-head p{margin-top:18px;color:var(--text-dim);font-size:1.05rem;line-height:1.6;font-weight:400;max-width:52ch;}
+
+  /* ---------- TESTIMONIO EN VIDEO ---------- */
+  .testimonial{background:var(--bg);}
+  .testimonial-wrap{
+    max-width:420px;
+    margin:0 auto;
+    display:flex;flex-direction:column;
+    align-items:center;
+  }
+  .testimonial-video-frame{
+    position:relative;
+    width:100%;
+    aspect-ratio:9/16;
+    border-radius:12px;
+    overflow:hidden;
+    border:1px solid rgba(255,201,74,0.3);
+    box-shadow:0 25px 60px -20px rgba(0,0,0,0.7);
+  }
+  .testimonial-video-frame video{
+    width:100%;height:100%;object-fit:cover;display:block;
+  }
+  .testimonial-cta{
+    margin-top:24px;
+    text-align:center;
+    opacity:0;
+    max-height:0;
+    overflow:hidden;
+    transition:opacity 0.5s ease, max-height 0.5s ease, margin-top 0.5s ease;
+  }
+  .testimonial-cta.show{
+    opacity:1;
+    max-height:200px;
+    margin-top:24px;
+  }
+  .testimonial-cta p{
+    color:var(--text-dim);font-weight:400;font-size:0.95rem;margin-bottom:14px;
+  }
+  .testimonial-cta p strong{color:var(--fire-1);}
 
   /* ---------- ABOUT ---------- */
   .about{
@@ -550,7 +576,7 @@
     gap:20px;
   }
   @media(min-width:640px){ .form-row{grid-template-columns:1fr 1fr;} }
-  .field{display:flex;flex-direction:column;gap:8px;}
+  .field{display:flex;flex-direction:column;gap:8px;min-width:0;}
   .field label{
     font-size:0.78rem;
     letter-spacing:0.08em;
@@ -559,6 +585,7 @@
   }
   .field label .req{color:var(--fire-2);}
   .field input, .field select, .field textarea{
+    width:100%;min-width:0;box-sizing:border-box;
     padding:14px 16px;
     background:rgba(255,255,255,0.04);
     border:1px solid rgba(255,255,255,0.15);
@@ -939,8 +966,28 @@
       </div>
     </div>
   </div>
-  <div class="scroll-cue"></div>
 </header>
+
+<section class="testimonial">
+  <div class="section-head" style="text-align:center;margin:0 auto 40px;">
+    <div class="eyebrow" style="justify-content:center;">Testimonio real</div>
+    <h2>Así lo cuenta Raúl</h2>
+    <p style="margin:0 auto;">Un cliente real, mostrando el trabajo terminado en su casa.</p>
+  </div>
+  <div class="testimonial-wrap">
+    <div class="testimonial-video-frame">
+      <video id="testimonialVideo" controls preload="none" poster="videos/poster3.jpg" playsinline aria-label="Testimonio de Raúl sobre su frente de parrilla">
+        <source src="videos/video3_testimonio.mp4" type="video/mp4">
+      </video>
+    </div>
+    <div class="testimonial-cta" id="testimonialCta">
+      <p>¿Querés un resultado <strong>así</strong> en tu casa?</p>
+      <a class="btn btn-primary" href="#presupuesto" id="testimonialCtaBtn">
+        Pedí tu presupuesto <span class="arrow">→</span>
+      </a>
+    </div>
+  </div>
+</section>
 
 <section class="about" id="nosotros">
   <div class="about-grid">
@@ -1459,6 +1506,26 @@ document.querySelectorAll('a[href*="wa.me"]').forEach(function(link){
     }
   });
 });
+
+/* ---------- Testimonio: mostrar CTA al terminar el video ---------- */
+(function(){
+  var video = document.getElementById('testimonialVideo');
+  var cta = document.getElementById('testimonialCta');
+  if(!video || !cta) return;
+
+  video.addEventListener('ended', function(){
+    cta.classList.add('show');
+  });
+
+  var ctaBtn = document.getElementById('testimonialCtaBtn');
+  if(ctaBtn){
+    ctaBtn.addEventListener('click', function(){
+      if(typeof gtag === 'function'){
+        gtag('event', 'testimonial_cta_click');
+      }
+    });
+  }
+})();
 
 /* ---------- Ember particles ---------- */
 const canvas = document.getElementById('ember-canvas');

@@ -1535,9 +1535,16 @@ function captureAttribution(){
     const val = params.get(key);
     if(val){ stored[key] = val; changed = true; }
   });
+  if(params.get('gclid') && !stored.gclid){
+    stored.gclid = params.get('gclid');
+    changed = true;
+  }
   if(!stored.origen){
     if(stored.utm_source){
       stored.origen = stored.utm_source;
+    } else if(stored.gclid){
+      /* Google Ads con etiquetado automático: llega con gclid, no con utm_source */
+      stored.origen = 'google_ads';
     } else if(document.referrer && document.referrer.indexOf(window.location.hostname) === -1){
       try{
         const refHost = new URL(document.referrer).hostname;
@@ -1556,6 +1563,32 @@ function captureAttribution(){
   return stored;
 }
 const attribution = captureAttribution();
+
+/* Traduce el código de origen a un texto claro para vos, incluido en el
+   mensaje de WhatsApp — así sabés al toque a quién corresponde la comisión. */
+function attributionLabel(){
+  if(attribution.origen === 'google_ads') return 'Google Ads (campaña paga)';
+  return 'Campaña Tony (texto para medir parámetros y efectividad)';
+}
+
+/* Reescribe todos los botones de WhatsApp de la página (nav, flotante, hero,
+   footer) para que el mensaje prellenado incluya el origen — se ejecuta apenas
+   carga la página, antes de que el visitante llegue a tocarlos. */
+function tagWhatsAppLinksWithOrigin(){
+  const label = attributionLabel();
+  document.querySelectorAll('a[href*="wa.me"]').forEach(function(link){
+    try{
+      const url = new URL(link.href);
+      let text = url.searchParams.get('text') || '';
+      if(text.indexOf('Origen:') === -1){
+        text = text + (text ? '\n\n' : '') + 'Origen: ' + label;
+      }
+      url.searchParams.set('text', text);
+      link.href = url.toString();
+    } catch(e){ /* link sin formato esperado, lo dejamos como está */ }
+  });
+}
+tagWhatsAppLinksWithOrigin();
 
 const quoteForm = document.getElementById('quoteForm');
 if(quoteForm){
@@ -1641,7 +1674,8 @@ if(quoteForm){
         'Localidad: ' + data.localidad,
         'Tipo de trabajo: ' + data.tipo_trabajo,
         (data.ancho || data.alto) ? ('Medidas aprox: ' + (data.ancho||'?') + 'cm x ' + (data.alto||'?') + 'cm') : null,
-        'Detalle: ' + data.mensaje
+        'Detalle: ' + data.mensaje,
+        'Origen: ' + attributionLabel()
       ].filter(Boolean).join('\n');
 
       window.open('https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(waText), '_blank');

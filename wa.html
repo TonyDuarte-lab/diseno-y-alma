@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Abriendo WhatsApp… | Diseño & Alma</title>
+<link rel="icon" type="image/png" href="/logo.png">
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:#060402;color:#f3ece4;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;text-align:center;padding:24px}
+  img{width:72px;height:72px;border-radius:50%;filter:drop-shadow(0 0 14px rgba(255,122,26,.55))}
+  p{margin:18px 0 22px;font-size:1.05rem}
+  a{display:inline-block;padding:14px 24px;border-radius:999px;background:#25D366;color:#0b2716;font-weight:600;text-decoration:none}
+</style>
+<!-- Mismo Analytics / Google Ads que index.html -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SYP2762M35"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-SYP2762M35');
+  var GOOGLE_ADS_ID = '';            // igual que en index.html
+  var ADS_CONVERSION_WHATSAPP = '';
+  if(GOOGLE_ADS_ID) gtag('config', GOOGLE_ADS_ID);
+</script>
+</head>
+<body>
+<main>
+  <img src="/logo.png" alt="Diseño & Alma">
+  <p>Abriendo WhatsApp…</p>
+  <a id="waLink" href="https://wa.me/5491161502751">Si no se abre, tocá acá</a>
+</main>
+<script>
+/* Página puente para los botones de los mails: anota el contacto en la
+   planilla de leads (la misma que usa el formulario de la web) y abre WhatsApp
+   con el mensaje ya escrito.
+   Parámetros: utm_* (campaña y mail), c = datos del destinatario en base64url
+   ({"n": nombre, "e": email}) para saber quién tocó el botón. */
+(function(){
+  var LEADS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzvsNAAS-RcwciVrTMWVnfS2eluzDQ44kluPCYJaUdrOCryb7fd4v-z4tT8_9wJRxoI/exec';
+  var WHATSAPP_NUMBER = '5491161502751';
+  var params = new URLSearchParams(location.search);
+
+  var contacto = {};
+  try{
+    var c = (params.get('c') || '').replace(/-/g,'+').replace(/_/g,'/');
+    if(c) contacto = JSON.parse(decodeURIComponent(escape(atob(c))));
+  }catch(e){ contacto = {}; }
+
+  var campania = params.get('utm_campaign') || '';
+  var mail = params.get('utm_content') || '';
+  var texto = campania === 'dia-de-la-madre'
+    ? 'Hola! Vi el mail del Día de la Madre de Diseño & Alma y quiero consultar por un frente de parrilla.'
+    : 'Hola! Vi el mail de Diseño & Alma y quiero consultar por un frente de parrilla.';
+  var waUrl = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(texto);
+  document.getElementById('waLink').href = waUrl;
+
+  var data = {
+    nombre: contacto.n || '',
+    telefono: '',
+    email: contacto.e || '',
+    localidad: '',
+    tipo_trabajo: '',
+    producto_interes: '',
+    ancho: '',
+    alto: '',
+    mensaje: 'Tocó el botón de WhatsApp del mail' + (mail ? ' (' + mail + ')' : '') + (campania ? ' — campaña ' + campania : ''),
+    origen: params.get('utm_source') || 'email',
+    utm_source: params.get('utm_source') || '',
+    utm_medium: params.get('utm_medium') || '',
+    utm_campaign: campania,
+    utm_content: mail,
+    utm_term: params.get('utm_term') || '',
+    estado: 'NUEVO'
+  };
+
+  gtag('event', 'whatsapp_click', { ubicacion: 'mail', campania: campania, mail: mail });
+  if(GOOGLE_ADS_ID && ADS_CONVERSION_WHATSAPP){
+    gtag('event', 'conversion', { send_to: GOOGLE_ADS_ID + '/' + ADS_CONVERSION_WHATSAPP });
+  }
+
+  var irAWhatsApp = function(){ location.replace(waUrl); };
+  var listo = false;
+  var seguir = function(){ if(!listo){ listo = true; irAWhatsApp(); } };
+  try{
+    fetch(LEADS_ENDPOINT, {
+      method: 'POST',
+      mode: 'no-cors',
+      keepalive: true,
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data)
+    }).then(seguir, seguir);
+  }catch(e){ seguir(); }
+  // Si la planilla tarda, no hacemos esperar a la persona.
+  setTimeout(seguir, 1500);
+})();
+</script>
+</body>
+</html>

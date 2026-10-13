@@ -75,14 +75,20 @@
     estado: 'NUEVO'
   };
 
+  var irAWhatsApp = function(){ location.replace(waUrl); };
+  var listo = false;
+  var seguir = function(){ if(!listo){ listo = true; irAWhatsApp(); } };
+
+  // Solo se anota a quien llega desde el botón de un mail (con sus datos en el
+  // link). Robots de Google o antivirus que abren la página solos no cuentan.
+  var esRobot = navigator.webdriver || /bot|crawl|spider|slurp|preview|scanner|headless/i.test(navigator.userAgent);
+  if(esRobot || !(params.get('c') || campania)){ seguir(); return; }
+
   gtag('event', 'whatsapp_click', { ubicacion: 'mail', campania: campania, mail: mail });
   if(GOOGLE_ADS_ID && ADS_CONVERSION_WHATSAPP){
     gtag('event', 'conversion', { send_to: GOOGLE_ADS_ID + '/' + ADS_CONVERSION_WHATSAPP });
   }
 
-  var irAWhatsApp = function(){ location.replace(waUrl); };
-  var listo = false;
-  var seguir = function(){ if(!listo){ listo = true; irAWhatsApp(); } };
   try{
     fetch(LEADS_ENDPOINT, {
       method: 'POST',

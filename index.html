@@ -1602,6 +1602,21 @@ function captureAttribution(){
 }
 const attribution = captureAttribution();
 
+/* Código de referencia de esta visita (ej: A7K2). Viaja en el mensaje de
+   WhatsApp y se anota en la planilla, así cada chat se puede unir con su
+   origen (Google Ads / Campaña Tony) y con su comisión. */
+function getVisitRef(){
+  let ref = '';
+  try{ ref = sessionStorage.getItem('visit_ref') || ''; }catch(e){}
+  if(!ref){
+    const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    for(let i = 0; i < 4; i++){ ref += abc.charAt(Math.floor(Math.random() * abc.length)); }
+    try{ sessionStorage.setItem('visit_ref', ref); }catch(e){}
+  }
+  return ref;
+}
+const visitRef = getVisitRef();
+
 /* Traduce el código de origen a un texto claro para vos, incluido en el
    mensaje de WhatsApp — así sabés al toque a quién corresponde la comisión. */
 function attributionLabel(){
@@ -1619,7 +1634,7 @@ function tagWhatsAppLinksWithOrigin(){
       const url = new URL(link.href);
       let text = url.searchParams.get('text') || '';
       if(text.indexOf('Origen:') === -1){
-        text = text + (text ? '\n\n' : '') + 'Origen: ' + label;
+        text = text + (text ? '\n\n' : '') + 'Origen: ' + label + '\nRef: ' + visitRef;
       }
       url.searchParams.set('text', text);
       link.href = url.toString();
@@ -1649,7 +1664,7 @@ if(quoteForm){
       producto_interes: fd.get('tipo_trabajo') || '',
       ancho: fd.get('ancho') || '',
       alto: fd.get('alto') || '',
-      mensaje: (fd.get('mensaje') || '').trim(),
+      mensaje: ((fd.get('mensaje') || '').trim() + ' [Ref: ' + visitRef + ']').trim(),
       origen: attribution.origen || 'directo',
       utm_source: attribution.utm_source || '',
       utm_medium: attribution.utm_medium || '',
@@ -1713,8 +1728,9 @@ if(quoteForm){
         'Localidad: ' + data.localidad,
         'Tipo de trabajo: ' + data.tipo_trabajo,
         (data.ancho || data.alto) ? ('Medidas aprox: ' + (data.ancho||'?') + 'cm x ' + (data.alto||'?') + 'cm') : null,
-        'Detalle: ' + data.mensaje,
-        'Origen: ' + attributionLabel()
+        'Detalle: ' + data.mensaje.replace(/\s*\[Ref: [A-Z0-9]+\]$/, ''),
+        'Origen: ' + attributionLabel(),
+        'Ref: ' + visitRef
       ].filter(Boolean).join('\n');
 
       window.open('https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(waText), '_blank');
@@ -1787,12 +1803,54 @@ if(newsletterForm){
 }
 
 /* ---------- Tracking de clics en WhatsApp ---------- */
+
+/* Anota en la planilla a cada persona que toca un botón de WhatsApp (una vez
+   por visita), con su origen y su código Ref. Así queda registrado a quién
+   corresponde la comisión aunque nunca complete el formulario. Usa el mismo
+   formato que la página puente de los mails (wa.html). */
+function registrarClicWhatsApp(ubicacion){
+  const esRobot = navigator.webdriver || /bot|crawl|spider|slurp|preview|scanner|headless/i.test(navigator.userAgent);
+  if(esRobot) return;
+  try{
+    if(sessionStorage.getItem('wa_click_logged')) return;
+    sessionStorage.setItem('wa_click_logged', '1');
+  }catch(e){}
+  const data = {
+    nombre: '',
+    telefono: '',
+    email: '',
+    localidad: '',
+    tipo_trabajo: 'CLIC WHATSAPP',
+    producto_interes: '',
+    ancho: '',
+    alto: '',
+    mensaje: 'Clic en WhatsApp (' + ubicacion + ') [Ref: ' + visitRef + ']',
+    origen: attribution.origen || 'directo',
+    utm_source: attribution.utm_source || '',
+    utm_medium: attribution.utm_medium || '',
+    utm_campaign: attribution.utm_campaign || '',
+    utm_content: attribution.utm_content || '',
+    utm_term: attribution.utm_term || '',
+    estado: 'NUEVO'
+  };
+  try{
+    fetch(LEADS_ENDPOINT, {
+      method: 'POST',
+      mode: 'no-cors',
+      keepalive: true,
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data)
+    }).catch(function(err){ console.error('Error anotando el clic en WhatsApp:', err); });
+  }catch(e){}
+}
+
 document.querySelectorAll('a[href*="wa.me"]').forEach(function(link){
   link.addEventListener('click', function(){
     if(typeof gtag === 'function'){
       gtag('event', 'whatsapp_click', { ubicacion: link.className || 'link' });
       conversionAds('whatsapp');
     }
+    registrarClicWhatsApp(link.className || 'link');
   });
 });
 

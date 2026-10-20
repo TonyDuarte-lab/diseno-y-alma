@@ -163,7 +163,7 @@ function render(){
   Array.prototype.forEach.call($('list').querySelectorAll('.card'),function(c){ c.onclick=function(){ openSheet(c.getAttribute('data-id')); }; });
   renderDetail();
   var now=new Date(DATA_AT||Date.now()); $('upd').textContent='Actualizado '+now.getHours()+':'+('0'+now.getMinutes()).slice(-2);
-  netBanner(); showWho();
+  netBanner(); showWho(); $('upd').textContent+=' · v'+VERSION;
 }
 
 var OPEN_PANEL = null;
@@ -260,7 +260,13 @@ function renderDetail(){
   if($('saveNote')) $('saveNote').onclick=function(){ doSave(t,cur,t.responsable,$('sNo').value,'Nota guardada ✓'); };
 }
 
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
+var VERSION='7';
+if('serviceWorker' in navigator){
+  var hadSW = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(function(){});
+  // cuando se instala una versión nueva, se recarga sola (una vez) para mostrarla
+  navigator.serviceWorker.addEventListener('controllerchange',function(){ if(hadSW && !window.__rl){ window.__rl=1; location.reload(); } });
+}
 (function init(){
   var p = savedPw();
   var c = p ? savedData() : null;

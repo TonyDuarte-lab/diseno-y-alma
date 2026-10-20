@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#185fa5">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Diseño y Alma - Trabajos</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--tx:#1f1f1d;--tx2:#5f5e5a;--bd:#e1dfd8;--ac:#185fa5;--acbg:#e6f1fb;--ok:#3b6d11;--okbg:#eaf3de;--wa:#854f0b;--wabg:#faeeda;--rd:#a32d2d;--rdbg:#fcebeb;}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1b19;--card:#262624;--tx:#f1efe8;--tx2:#b4b2a9;--bd:#3a3a37;--ac:#85b7eb;--acbg:#0c447c;--ok:#c0dd97;--okbg:#27500a;--wa:#fac775;--wabg:#633806;--rd:#f7c1c1;--rdbg:#791f1f;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 Arial,Helvetica,sans-serif}
+.wrap{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:20px;font-weight:600;margin:0}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.card.sel{border-color:var(--ac)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.nm{font-weight:600}
+.sub{font-size:13px;color:var(--tx2)}
+.tag{font-size:12px;padding:2px 8px;border-radius:8px;white-space:nowrap}
+.t-sin{background:var(--bd);color:var(--tx2)}.t-plazo{background:var(--okbg);color:var(--ok)}.t-porvencer{background:var(--wabg);color:var(--wa)}.t-demorado{background:var(--rdbg);color:var(--rd)}
+.bar{height:6px;border-radius:3px;background:var(--bd);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%}
+.f-plazo{background:var(--ok)}.f-porvencer{background:var(--wa)}.f-demorado{background:var(--rd)}.f-sin{background:var(--bd)}
+button,select,input,textarea{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;width:100%}
+button{cursor:pointer;font-weight:600}
+button.pri{background:var(--ac);color:#fff;border-color:var(--ac)}
+@media (prefers-color-scheme:dark){button.pri{color:#04202e}}
+button.link{width:auto;border:none;background:none;color:var(--tx2);font-weight:400;padding:4px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{width:auto;padding:5px 12px;font-size:13px;font-weight:400;border-radius:16px}
+.chip.on{background:var(--acbg);color:var(--ac);border-color:var(--ac)}
+.st{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd);font-size:15px}
+.dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--bd);flex:none}
+.dot.done{background:var(--ok);border-color:var(--ok)}.dot.now{border-color:var(--ac);background:var(--acbg)}.dot.late{border-color:var(--rd);background:var(--rdbg)}
+.err{color:var(--rd);font-size:14px;margin-top:8px;min-height:20px}
+label{font-size:13px;color:var(--tx2);display:block;margin:10px 0 4px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="login" class="hide">
+  <h1>Diseño y Alma</h1>
+  <p class="sub">Ingresá la clave para ver los trabajos.</p>
+  <input id="pw" type="password" placeholder="Clave" autocomplete="current-password">
+  <div style="height:10px"></div>
+  <button class="pri" id="go">Entrar</button>
+  <div class="err" id="lerr"></div>
+</div>
+
+<div id="app" class="hide">
+  <div class="top"><h1>Trabajos</h1><div><button class="link" id="ref">Actualizar</button><button class="link" id="out">Salir</button></div></div>
+  <div class="chips" id="chips"></div>
+  <div id="list"></div>
+  <div id="detail" class="card hide"></div>
+  <div class="sub" style="text-align:center;margin-top:8px" id="upd"></div>
+</div>
+</div>
+
+<script>
+var PW = null, DATA = null, FILTER = 'todos', SEL = null, BUSY = false;
+function $(i){return document.getElementById(i);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+var API = 'https://script.google.com/macros/s/AKfycbwYpCU2lYRbm9Mq5fC9nO1_VX4zbjNfzE9gpa5spVY31L10GXhmkrm7ZNmpcEhlHtq2GA/exec';
+function call(fn){
+  var args = Array.prototype.slice.call(arguments,1);
+  return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn:fn,args:args}),credentials:'omit',redirect:'follow'})
+    .then(function(r){return r.json();})
+    .then(function(j){ if(j.error) throw new Error(j.error); return j.data; });
+}
+function savedPw(){try{return localStorage.getItem('dya_pw');}catch(e){return null;}}
+function savePw(p){try{localStorage.setItem('dya_pw',p);}catch(e){}}
+function clearPw(){try{localStorage.removeItem('dya_pw');}catch(e){}}
+
+function showLogin(msg){ $('app').className='hide'; $('login').className=''; $('lerr').textContent=msg||''; }
+function tryLogin(p){
+  return call('getData',p).then(function(d){ PW=p; savePw(p); DATA=d; $('login').className='hide'; $('app').className=''; render(); })
+  .catch(function(e){ clearPw(); showLogin((e && e.message || 'No se pudo entrar.').replace(/^Error: /,'')); });
+}
+$('go').onclick=function(){ var p=$('pw').value; if(!p){$('lerr').textContent='Ingresá la clave.';return;} $('lerr').textContent=''; tryLogin(p); };
+$('pw').onkeydown=function(e){ if(e.key==='Enter') $('go').click(); };
+$('out').onclick=function(){ clearPw(); PW=null; DATA=null; showLogin(''); };
+$('ref').onclick=function(){ reload(); };
+
+function reload(){
+  if(!PW) return;
+  $('upd').textContent='Actualizando...';
+  call('getData',PW).then(function(d){ DATA=d; render(); }).catch(function(e){ $('upd').textContent='No se pudo actualizar.'; });
+}
+
+var ORDER={demorado:0,porvencer:1,plazo:2,sin:3};
+function render(){
+  var T = DATA.trabajos.slice().sort(function(a,b){ return (ORDER[a.estado]-ORDER[b.estado]) || (b.dias||0)-(a.dias||0); });
+  var counts={todos:T.length,demorado:0,porvencer:0,sin:0};
+  T.forEach(function(t){ if(counts[t.estado]!==undefined) counts[t.estado]++; });
+  var defs=[['todos','Todos'],['demorado','Demorados'],['porvencer','Por vencer'],['sin','Sin etapa']];
+  $('chips').innerHTML = defs.map(function(d){ return '<button class="chip'+(FILTER===d[0]?' on':'')+'" data-f="'+d[0]+'">'+d[1]+' '+(counts[d[0]]||0)+'</button>'; }).join('');
+  Array.prototype.forEach.call($('chips').children,function(b){ b.onclick=function(){ FILTER=b.getAttribute('data-f'); render(); }; });
+  var L = T.filter(function(t){ return FILTER==='todos' || t.estado===FILTER; });
+  var n = DATA.etapas.length;
+  $('list').innerHTML = L.map(function(t){
+    var tag = t.estado==='demorado' ? 'Demorado' : t.estado==='porvencer' ? 'Por vencer' : t.estado==='sin' ? 'Sin etapa' : 'En plazo';
+    var et = t.etapa>=0 ? DATA.etapas[t.etapa].nombre : 'Etapa por asignar';
+    var pc = t.etapa>=0 ? Math.round((t.etapa+1)/n*100) : 0;
+    var info = t.etapa>=0 ? (t.dias!=null ? t.dias+' d'+(t.est!=null?' de '+t.est:'') : '') : '';
+    return '<div class="card'+(SEL===t.id?' sel':'')+'" data-id="'+esc(t.id)+'"><div class="row"><span class="nm">'+esc(t.cliente)+'</span><span class="tag t-'+t.estado+'">'+tag+'</span></div>'
+      +'<div class="sub">'+esc(et)+(t.responsable?' · '+esc(t.responsable):'')+(t.zona?' · '+esc(t.zona):'')+'</div>'
+      +(t.etapa>=0?'<div class="row sub" style="margin-top:4px"><span>'+info+'</span><span></span></div>':'')
+      +'<div class="bar"><i class="f-'+t.estado+'" style="width:'+pc+'%"></i></div></div>';
+  }).join('') || '<div class="sub">No hay trabajos para mostrar.</div>';
+  Array.prototype.forEach.call($('list').querySelectorAll('.card'),function(c){ c.onclick=function(){ SEL=c.getAttribute('data-id'); render(); $('detail').scrollIntoView({behavior:'smooth'}); }; });
+  renderDetail();
+  var now=new Date(); $('upd').textContent='Actualizado '+now.getHours()+':'+('0'+now.getMinutes()).slice(-2);
+}
+
+function renderDetail(){
+  var t = DATA.trabajos.filter(function(x){ return String(x.id)===String(SEL); })[0];
+  if(!t){ $('detail').className='card hide'; return; }
+  $('detail').className='card';
+  var E = DATA.etapas;
+  var steps = E.map(function(e,k){
+    var cls = t.etapa<0 ? '' : k<t.etapa ? 'done' : k===t.etapa ? (t.estado==='demorado'?'late':'now') : '';
+    return '<div class="st"><span class="dot '+cls+'"></span><span style="'+(k===t.etapa?'font-weight:600':'')+'">'+esc(e.nombre)+'</span></div>';
+  }).join('');
+  var next = t.etapa<0 ? 0 : Math.min(t.etapa+1,E.length-1);
+  var opts = E.map(function(e,k){ return '<option value="'+k+'"'+(k===next?' selected':'')+'>'+esc(e.nombre)+'</option>'; }).join('');
+  var late = t.estado==='demorado' ? '<div class="tag t-demorado" style="display:inline-block;margin-top:6px">Demorado: '+(t.dias-t.est)+' día(s) de más</div>' : '';
+  $('detail').innerHTML = '<div class="row"><span class="nm" style="font-size:18px">'+esc(t.cliente)+'</span><button class="link" id="close">Cerrar</button></div>'
+    +'<div class="sub">'+esc(t.zona)+(t.zona?' · ':'')+'cargado el '+esc(t.fecha)+'</div>'+late
+    +'<div style="margin:10px 0">'+steps+'</div>'
+    +'<label for="sEt">Mover a</label><select id="sEt">'+opts+'</select>'
+    +'<div id="rWrap"></div>'
+    +'<label for="sNo">Notas</label><textarea id="sNo" rows="2">'+esc(t.notas)+'</textarea>'
+    +'<div style="height:10px"></div><button class="pri" id="save">Guardar cambio</button><div class="err" id="derr"></div>';
+  function respUI(){
+    var k = +$('sEt').value; var r = E[k].responsables;
+    if(!r.length){ $('rWrap').innerHTML=''; return; }
+    var cur = t.etapa===k ? t.responsable : '';
+    $('rWrap').innerHTML = '<label for="sRe">Quién lo tiene</label><select id="sRe">'+r.map(function(x){ return '<option'+(x===cur?' selected':'')+'>'+esc(x)+'</option>'; }).join('')+'</select>';
+  }
+  $('sEt').onchange=respUI; respUI();
+  $('close').onclick=function(){ SEL=null; render(); };
+  $('save').onclick=function(){
+    if(BUSY) return; BUSY=true; $('derr').textContent=''; $('save').textContent='Guardando...';
+    var k=+$('sEt').value; var re=$('sRe')?$('sRe').value:'';
+    call('setEtapa',PW,t.id,k,re,$('sNo').value).then(function(d){ DATA=d; BUSY=false; render(); })
+    .catch(function(e){ BUSY=false; $('save').textContent='Guardar cambio'; $('derr').textContent=(e&&e.message||'No se pudo guardar.').replace(/^Error: /,''); });
+  };
+}
+
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
+(function init(){
+  var p = savedPw();
+  if(p) tryLogin(p); else showLogin('');
+  setInterval(function(){ if(PW && !BUSY && !SEL && !document.hidden) reload(); }, 60000);
+})();
+</script>
+</body>
+</html>

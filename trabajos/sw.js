@@ -1,5 +1,5 @@
 // Service worker mínimo: permite instalar la app. Los datos siempre vienen en vivo del Excel.
-var CACHE = 'dya-trabajos-v2';
+var CACHE = 'dya-trabajos-v3';
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(['./', 'icon-192.png', 'logo-96.png']); }));
   self.skipWaiting();

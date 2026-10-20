@@ -35,9 +35,26 @@ button.link{width:auto;border:none;background:none;color:var(--tx2);font-weight:
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .chip{width:auto;padding:5px 12px;font-size:13px;font-weight:400;border-radius:16px}
 .chip.on{background:var(--acbg);color:var(--ac);border-color:var(--ac)}
-.st{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd);font-size:15px}
-.dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--bd);flex:none}
-.dot.done{background:var(--ok);border-color:var(--ok)}.dot.now{border-color:var(--ac);background:var(--acbg)}.dot.late{border-color:var(--rd);background:var(--rdbg)}
+.sheet{position:fixed;inset:0;background:var(--bg);z-index:10;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet .wrap{padding-bottom:140px}
+.back{width:auto;border:none;background:none;font-size:15px;color:var(--ac);padding:6px 4px;font-weight:600}
+.steps{margin:14px 0 6px}
+.step{display:flex;gap:12px;align-items:flex-start;padding:10px 4px;border-radius:10px;cursor:pointer;position:relative}
+.step:active{background:var(--acbg)}
+.step svg{flex:none;width:28px;height:28px}
+.step .tt{font-size:16px;line-height:28px}
+.step.cur .tt{font-weight:700}
+.step .meta{font-size:13px;color:var(--tx2);margin-top:-2px}
+.i-done{color:var(--ok)}.i-now{color:var(--ac)}.i-por{color:var(--wa)}.i-late{color:var(--rd)}.i-pend{color:var(--tx2);opacity:.55}
+.panel{margin:4px 0 8px 40px;padding:10px;border:1px dashed var(--bd);border-radius:10px}
+.pchips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.pchip{width:auto;padding:10px 18px;border-radius:20px}
+.bar-fix{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--bd);padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:11}
+.bar-fix .in{max-width:520px;margin:0 auto}
+button.big{padding:14px 12px;font-size:17px;border-radius:12px}
+button.sec{background:none;border:none;color:var(--tx2);font-weight:400;padding:8px;width:auto}
+.toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:20px;font-size:14px;z-index:20;max-width:90%}
+details summary{cursor:pointer;color:var(--tx2);font-size:14px;padding:6px 0}
 .err{color:var(--rd);font-size:14px;margin-top:8px;min-height:20px}
 label{font-size:13px;color:var(--tx2);display:block;margin:10px 0 4px}
 .hide{display:none}
@@ -59,10 +76,11 @@ label{font-size:13px;color:var(--tx2);display:block;margin:10px 0 4px}
   <div class="top"><div class="row" style="justify-content:flex-start"><img src="logo-96.png" alt="" width="36" height="36" style="border-radius:8px"><h1>Trabajos</h1></div><div><button class="link" id="ref">Actualizar</button><button class="link" id="out">Salir</button></div></div>
   <div class="chips" id="chips"></div>
   <div id="list"></div>
-  <div id="detail" class="card hide"></div>
   <div class="sub" style="text-align:center;margin-top:8px" id="upd"></div>
 </div>
 </div>
+<div id="sheet" class="sheet hide"></div>
+<div id="toast" class="toast hide"></div>
 
 <script>
 var PW = null, DATA = null, FILTER = 'todos', SEL = null, BUSY = false;
@@ -86,7 +104,7 @@ function tryLogin(p){
 }
 $('go').onclick=function(){ var p=$('pw').value; if(!p){$('lerr').textContent='Ingresá la clave.';return;} $('lerr').textContent=''; tryLogin(p); };
 $('pw').onkeydown=function(e){ if(e.key==='Enter') $('go').click(); };
-$('out').onclick=function(){ clearPw(); PW=null; DATA=null; showLogin(''); };
+$('out').onclick=function(){ clearPw(); PW=null; DATA=null; SEL=null; $('sheet').className='sheet hide'; showLogin(''); };
 $('ref').onclick=function(){ reload(); };
 
 function reload(){
@@ -109,50 +127,88 @@ function render(){
     var tag = t.estado==='demorado' ? 'Demorado' : t.estado==='porvencer' ? 'Por vencer' : t.estado==='sin' ? 'Sin etapa' : 'En plazo';
     var et = t.etapa>=0 ? DATA.etapas[t.etapa].nombre : 'Etapa por asignar';
     var pc = t.etapa>=0 ? Math.round((t.etapa+1)/n*100) : 0;
-    var info = t.etapa>=0 ? (t.dias!=null ? t.dias+' d'+(t.est!=null?' de '+t.est:'') : '') : '';
+    var info = t.etapa>=0 ? 'Paso '+(t.etapa+1)+' de '+n+(t.dias!=null ? ' · '+t.dias+' d'+(t.est!=null?' de '+t.est:'') : '') : '';
     return '<div class="card'+(SEL===t.id?' sel':'')+'" data-id="'+esc(t.id)+'"><div class="row"><span class="nm">'+esc(t.cliente)+'</span><span class="tag t-'+t.estado+'">'+tag+'</span></div>'
       +'<div class="sub">'+esc(et)+(t.responsable?' · '+esc(t.responsable):'')+(t.zona?' · '+esc(t.zona):'')+'</div>'
       +(t.etapa>=0?'<div class="row sub" style="margin-top:4px"><span>'+info+'</span><span></span></div>':'')
       +'<div class="bar"><i class="f-'+t.estado+'" style="width:'+pc+'%"></i></div></div>';
   }).join('') || '<div class="sub">No hay trabajos para mostrar.</div>';
-  Array.prototype.forEach.call($('list').querySelectorAll('.card'),function(c){ c.onclick=function(){ SEL=c.getAttribute('data-id'); render(); $('detail').scrollIntoView({behavior:'smooth'}); }; });
+  Array.prototype.forEach.call($('list').querySelectorAll('.card'),function(c){ c.onclick=function(){ openSheet(c.getAttribute('data-id')); }; });
   renderDetail();
   var now=new Date(); $('upd').textContent='Actualizado '+now.getHours()+':'+('0'+now.getMinutes()).slice(-2);
 }
 
+var OPEN_PANEL = null;
+function toast(msg){ var t=$('toast'); t.textContent=msg; t.className='toast'; clearTimeout(toast._t); toast._t=setTimeout(function(){ t.className='toast hide'; },3500); }
+function openSheet(id){ SEL=id; OPEN_PANEL=null; try{history.pushState({s:1},'');}catch(e){} render(); var sh=$('sheet'); if(sh) sh.scrollTop=0; }
+function closeSheet(){ if(history.state && history.state.s){ history.back(); } else { SEL=null; OPEN_PANEL=null; render(); } }
+window.addEventListener('popstate',function(){ SEL=null; OPEN_PANEL=null; if(DATA) render(); });
+
+function icon(kind){
+  if(kind==='done') return '<svg class="i-done" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="currentColor"/><path d="M8 14.5l4 4 8-9" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  if(kind==='pend') return '<svg class="i-pend" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11.5" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>';
+  return '<svg class="i-'+kind+'" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M14 2.5A11.5 11.5 0 0 0 14 25.5Z" fill="currentColor"/></svg>';
+}
+
+function doSave(t,k,resp,notas,msg){
+  if(BUSY) return; BUSY=true;
+  call('setEtapa',PW,t.id,k,resp||'',typeof notas==='string'?notas:t.notas).then(function(d){ DATA=d; BUSY=false; OPEN_PANEL=null; render(); toast(msg||'Guardado ✓'); })
+  .catch(function(e){ BUSY=false; toast((e&&e.message||'No se pudo guardar.').replace(/^Error: /,'')); });
+}
+function startMove(t,k){
+  var r=DATA.etapas[k].responsables;
+  if(r.length>1){ OPEN_PANEL=k; renderDetail(); return; }
+  doSave(t,k,r[0]||'',undefined, 'Pasó a «'+DATA.etapas[k].nombre+'» ✓');
+}
+
 function renderDetail(){
+  var sh=$('sheet');
   var t = DATA.trabajos.filter(function(x){ return String(x.id)===String(SEL); })[0];
-  if(!t){ $('detail').className='card hide'; return; }
-  $('detail').className='card';
-  var E = DATA.etapas;
-  var steps = E.map(function(e,k){
-    var cls = t.etapa<0 ? '' : k<t.etapa ? 'done' : k===t.etapa ? (t.estado==='demorado'?'late':'now') : '';
-    return '<div class="st"><span class="dot '+cls+'"></span><span style="'+(k===t.etapa?'font-weight:600':'')+'">'+esc(e.nombre)+'</span></div>';
-  }).join('');
-  var next = t.etapa<0 ? 0 : Math.min(t.etapa+1,E.length-1);
-  var opts = E.map(function(e,k){ return '<option value="'+k+'"'+(k===next?' selected':'')+'>'+esc(e.nombre)+'</option>'; }).join('');
-  var late = t.estado==='demorado' ? '<div class="tag t-demorado" style="display:inline-block;margin-top:6px">Demorado: '+(t.dias-t.est)+' día(s) de más</div>' : '';
-  $('detail').innerHTML = '<div class="row"><span class="nm" style="font-size:18px">'+esc(t.cliente)+'</span><button class="link" id="close">Cerrar</button></div>'
-    +'<div class="sub">'+esc(t.zona)+(t.zona?' · ':'')+'cargado el '+esc(t.fecha)+'</div>'+late
-    +'<div style="margin:10px 0">'+steps+'</div>'
-    +'<label for="sEt">Mover a</label><select id="sEt">'+opts+'</select>'
-    +'<div id="rWrap"></div>'
-    +'<label for="sNo">Notas</label><textarea id="sNo" rows="2">'+esc(t.notas)+'</textarea>'
-    +'<div style="height:10px"></div><button class="pri" id="save">Guardar cambio</button><div class="err" id="derr"></div>';
-  function respUI(){
-    var k = +$('sEt').value; var r = E[k].responsables;
-    if(!r.length){ $('rWrap').innerHTML=''; return; }
-    var cur = t.etapa===k ? t.responsable : '';
-    $('rWrap').innerHTML = '<label for="sRe">Quién lo tiene</label><select id="sRe">'+r.map(function(x){ return '<option'+(x===cur?' selected':'')+'>'+esc(x)+'</option>'; }).join('')+'</select>';
+  if(!t){ sh.className='sheet hide'; sh.innerHTML=''; return; }
+  var keep = sh.scrollTop;
+  sh.className='sheet';
+  var E = DATA.etapas, cur=t.etapa;
+  var kindNow = t.estado==='demorado' ? 'late' : t.estado==='porvencer' ? 'por' : 'now';
+  var late = t.estado==='demorado' ? '<span class="tag t-demorado">Demorado: '+(t.dias-t.est)+' día(s) de más</span>' : t.estado==='porvencer' ? '<span class="tag t-porvencer">Por vencer</span>' : t.estado==='sin' ? '<span class="tag t-sin">Sin etapa</span>' : '<span class="tag t-plazo">En plazo</span>';
+  var html = '<div class="wrap"><button class="back" id="bk">← Trabajos</button>'
+    +'<div style="margin:8px 0 2px;font-size:22px;font-weight:700">'+esc(t.cliente)+'</div>'
+    +'<div class="sub">'+esc(t.zona)+(t.zona?' · ':'')+'cargado el '+esc(t.fecha)+'</div><div style="margin-top:8px">'+late+'</div>'
+    +'<div class="steps">';
+  E.forEach(function(e,k){
+    var kind = cur<0 ? 'pend' : k<cur ? 'done' : k===cur ? kindNow : 'pend';
+    var meta='';
+    if(k===cur){ meta = (t.responsable?esc(t.responsable)+' · ':'')+(t.dias!=null?t.dias+' d'+(t.est!=null?' de '+t.est:''):''); }
+    html += '<div class="step'+(k===cur?' cur':'')+'" data-k="'+k+'">'+icon(kind)+'<div><div class="tt">'+esc(e.nombre)+'</div>'+(meta?'<div class="meta">'+meta+'</div>':'')+'</div></div>';
+    if(OPEN_PANEL===k){
+      html += '<div class="panel"><div class="sub">¿Quién lo tiene en «'+esc(e.nombre)+'»?</div><div class="pchips">'+e.responsables.map(function(x){ return '<button class="pchip pri" data-resp="'+esc(x)+'">'+esc(x)+'</button>'; }).join('')+'</div></div>';
+    }
+  });
+  html += '</div>';
+  if(cur>=0 && E[cur].responsables.length>1){
+    html += '<div class="sub" style="margin-top:6px">Cambiar quién lo tiene:</div><div class="pchips">'+E[cur].responsables.map(function(x){ return '<button class="pchip'+(x===t.responsable?' pri':'')+'" data-same="'+esc(x)+'">'+esc(x)+'</button>'; }).join('')+'</div>';
   }
-  $('sEt').onchange=respUI; respUI();
-  $('close').onclick=function(){ SEL=null; render(); };
-  $('save').onclick=function(){
-    if(BUSY) return; BUSY=true; $('derr').textContent=''; $('save').textContent='Guardando...';
-    var k=+$('sEt').value; var re=$('sRe')?$('sRe').value:'';
-    call('setEtapa',PW,t.id,k,re,$('sNo').value).then(function(d){ DATA=d; BUSY=false; render(); })
-    .catch(function(e){ BUSY=false; $('save').textContent='Guardar cambio'; $('derr').textContent=(e&&e.message||'No se pudo guardar.').replace(/^Error: /,''); });
-  };
+  html += '<details style="margin-top:14px"'+(t.notas?' open':'')+'><summary>Notas</summary><textarea id="sNo" rows="3" placeholder="Escribí una nota..."'+(cur<0?' disabled':'')+'>'+esc(t.notas)+'</textarea>'
+    +(cur<0?'<div class="sub">Asigná el primer paso para poder escribir notas.</div>':'<div style="height:8px"></div><button id="saveNote">Guardar nota</button>')+'</details>'
+    +'<div class="err" id="derr"></div></div>';
+  var next = cur<0 ? 0 : cur+1;
+  var bar = '<div class="bar-fix"><div class="in">';
+  if(next<E.length){
+    bar += '<button class="pri big" id="nextBtn">'+(cur<0?'Empezar: ':'Siguiente paso: ')+esc(E[next].nombre)+' →</button>';
+  } else {
+    bar += '<div style="text-align:center;font-weight:600;padding:12px;color:var(--ok)">✓ Trabajo completo</div>';
+  }
+  if(cur>0) bar += '<div style="text-align:center"><button class="sec" id="prevBtn">↩ Volver a «'+esc(E[cur-1].nombre)+'»</button></div>';
+  bar += '</div></div>';
+  sh.innerHTML = html + bar;
+  sh.scrollTop = keep;
+
+  $('bk').onclick=closeSheet;
+  Array.prototype.forEach.call(sh.querySelectorAll('.step'),function(el){ el.onclick=function(){ var k=+el.getAttribute('data-k'); if(k===cur) return; if(BUSY) return; if(confirm('¿Mover «'+t.cliente+'» a «'+E[k].nombre+'»?')) startMove(t,k); }; });
+  Array.prototype.forEach.call(sh.querySelectorAll('[data-resp]'),function(b){ b.onclick=function(){ doSave(t,OPEN_PANEL,b.getAttribute('data-resp'),undefined, 'Pasó a «'+E[OPEN_PANEL].nombre+'» ✓'); }; });
+  Array.prototype.forEach.call(sh.querySelectorAll('[data-same]'),function(b){ b.onclick=function(){ doSave(t,cur,b.getAttribute('data-same'),undefined, 'Ahora lo tiene '+b.getAttribute('data-same')+' ✓'); }; });
+  if($('nextBtn')) $('nextBtn').onclick=function(){ startMove(t,next); };
+  if($('prevBtn')) $('prevBtn').onclick=function(){ if(confirm('¿Volver «'+t.cliente+'» a «'+E[cur-1].nombre+'»?')) startMove(t,cur-1); };
+  if($('saveNote')) $('saveNote').onclick=function(){ doSave(t,cur,t.responsable,$('sNo').value,'Nota guardada ✓'); };
 }
 
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }

@@ -2,7 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#185fa5">
 <link rel="manifest" href="manifest.webmanifest">
@@ -12,9 +14,11 @@
 <style>
 :root{--bg:#f6f5f2;--card:#fff;--tx:#1f1f1d;--tx2:#5f5e5a;--bd:#e1dfd8;--ac:#185fa5;--acbg:#e6f1fb;--ok:#3b6d11;--okbg:#eaf3de;--wa:#854f0b;--wabg:#faeeda;--rd:#a32d2d;--rdbg:#fcebeb;}
 @media (prefers-color-scheme:dark){:root{--bg:#1b1b19;--card:#262624;--tx:#f1efe8;--tx2:#b4b2a9;--bd:#3a3a37;--ac:#85b7eb;--acbg:#0c447c;--ok:#c0dd97;--okbg:#27500a;--wa:#fac775;--wabg:#633806;--rd:#f7c1c1;--rdbg:#791f1f;}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 Arial,Helvetica,sans-serif}
-.wrap{max-width:520px;margin:0 auto;padding:16px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;width:100%;overflow-x:hidden}
+body{margin:0;width:100%;min-height:100vh;min-height:100dvh;overflow-x:hidden;overscroll-behavior-y:contain;touch-action:manipulation;background:var(--bg);color:var(--tx);font:16px/1.5 Arial,Helvetica,sans-serif}
+.wrap{width:100%;margin:0 auto;padding:16px;padding-left:calc(16px + env(safe-area-inset-left));padding-right:calc(16px + env(safe-area-inset-right));padding-top:calc(16px + env(safe-area-inset-top))}
+@media (min-width:700px){.wrap{max-width:640px}}
 h1{font-size:20px;font-weight:600;margin:0}
 .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:10px}
@@ -35,7 +39,7 @@ button.link{width:auto;border:none;background:none;color:var(--tx2);font-weight:
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .chip{width:auto;padding:5px 12px;font-size:13px;font-weight:400;border-radius:16px}
 .chip.on{background:var(--acbg);color:var(--ac);border-color:var(--ac)}
-.sheet{position:fixed;inset:0;background:var(--bg);z-index:10;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet{position:fixed;inset:0;background:var(--bg);z-index:10;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .sheet .wrap{padding-bottom:140px}
 .back{width:auto;border:none;background:none;font-size:15px;color:var(--ac);padding:6px 4px;font-weight:600}
 .steps{margin:14px 0 6px}
@@ -50,14 +54,18 @@ button.link{width:auto;border:none;background:none;color:var(--tx2);font-weight:
 .pchips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .pchip{width:auto;padding:10px 18px;border-radius:20px}
 .bar-fix{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--bd);padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:11}
-.bar-fix .in{max-width:520px;margin:0 auto}
+.bar-fix .in{max-width:640px;margin:0 auto}
 button.big{padding:14px 12px;font-size:17px;border-radius:12px}
 button.sec{background:none;border:none;color:var(--tx2);font-weight:400;padding:8px;width:auto}
 .toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:20px;font-size:14px;z-index:20;max-width:90%}
 details summary{cursor:pointer;color:var(--tx2);font-size:14px;padding:6px 0}
 .err{color:var(--rd);font-size:14px;margin-top:8px;min-height:20px}
 label{font-size:13px;color:var(--tx2);display:block;margin:10px 0 4px}
-.hide{display:none}
+.hide{display:none!important}
+.net{background:var(--wabg);color:var(--wa);font-size:13px;padding:8px 12px;border-radius:10px;margin-bottom:10px;text-align:center}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.modal .box{background:var(--bg);width:100%;max-width:640px;border-radius:16px 16px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom))}
+.modal button{margin-top:10px}
 </style>
 </head>
 <body>
@@ -73,7 +81,8 @@ label{font-size:13px;color:var(--tx2);display:block;margin:10px 0 4px}
 </div>
 
 <div id="app" class="hide">
-  <div class="top"><div class="row" style="justify-content:flex-start"><img src="logo-96.png" alt="" width="36" height="36" style="border-radius:8px"><h1>Trabajos</h1></div><div><button class="link" id="ref">Actualizar</button><button class="link" id="out">Salir</button></div></div>
+  <div class="top"><div class="row" style="justify-content:flex-start"><img src="logo-96.png" alt="" width="36" height="36" style="border-radius:8px"><h1>Trabajos</h1></div><div><button class="link" id="who">👤</button><button class="link" id="ref">Actualizar</button><button class="link" id="out">Salir</button></div></div>
+  <div id="net" class="net hide"></div>
   <div class="chips" id="chips"></div>
   <div id="list"></div>
   <div class="sub" style="text-align:center;margin-top:8px" id="upd"></div>
@@ -81,9 +90,10 @@ label{font-size:13px;color:var(--tx2);display:block;margin:10px 0 4px}
 </div>
 <div id="sheet" class="sheet hide"></div>
 <div id="toast" class="toast hide"></div>
+<div id="whoBox" class="modal hide"><div class="box"><h1>¿Quién sos?</h1><p class="sub">Así queda anotado en el historial quién hizo cada cambio.</p><button class="pri big" data-w="Tony">Tony</button><button class="big" data-w="Leo">Leo</button><button class="big" data-w="Otro">Otro</button></div></div>
 
 <script>
-var PW = null, DATA = null, FILTER = 'todos', SEL = null, BUSY = false;
+var PW = null, DATA = null, FILTER = 'todos', SEL = null, BUSY = false, OFFLINE = false, DATA_AT = 0;
 function $(i){return document.getElementById(i);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 var API = 'https://script.google.com/macros/s/AKfycbwYpCU2lYRbm9Mq5fC9nO1_VX4zbjNfzE9gpa5spVY31L10GXhmkrm7ZNmpcEhlHtq2GA/exec';
@@ -94,23 +104,39 @@ function call(fn){
     .then(function(j){ if(j.error) throw new Error(j.error); return j.data; });
 }
 function savedPw(){try{return localStorage.getItem('dya_pw');}catch(e){return null;}}
+function savedData(){try{var j=JSON.parse(localStorage.getItem('dya_data')||'null'); return (j&&j.d&&j.d.trabajos)?j:null;}catch(e){return null;}}
+function saveData(){try{localStorage.setItem('dya_data',JSON.stringify({d:DATA,t:DATA_AT}));}catch(e){}}
+function clearData(){try{localStorage.removeItem('dya_data');}catch(e){}}
+function getWho(){try{return localStorage.getItem('dya_who')||'';}catch(e){return '';}}
+function setWho(w){try{localStorage.setItem('dya_who',w);}catch(e){}}
+function ago(ms){var m=Math.round((Date.now()-ms)/60000); if(m<1) return 'recién'; if(m<60) return 'hace '+m+' min'; var h=Math.round(m/60); if(h<24) return 'hace '+h+' h'; return 'hace '+Math.round(h/24)+' d';}
+function netBanner(){var n=$('net'); if(OFFLINE){ n.textContent='Sin conexión · mostrando datos de '+ago(DATA_AT)+'. Los cambios no se guardan hasta que vuelva internet.'; n.className='net'; } else { n.className='net hide'; }}
+function isNetErr(e){ return e && (e.name==='TypeError' || /Failed to fetch|NetworkError|Load failed/i.test(e.message||'')); }
+function setData(d){ DATA=d; DATA_AT=Date.now(); OFFLINE=false; saveData(); }
 function savePw(p){try{localStorage.setItem('dya_pw',p);}catch(e){}}
 function clearPw(){try{localStorage.removeItem('dya_pw');}catch(e){}}
 
 function showLogin(msg){ $('app').className='hide'; $('login').className=''; $('lerr').textContent=msg||''; }
 function tryLogin(p){
-  return call('getData',p).then(function(d){ PW=p; savePw(p); DATA=d; $('login').className='hide'; $('app').className=''; render(); })
-  .catch(function(e){ clearPw(); showLogin((e && e.message || 'No se pudo entrar.').replace(/^Error: /,'')); });
+  return call('getData',p).then(function(d){ PW=p; savePw(p); setData(d); $('login').className='hide'; $('app').className=''; render(); })
+  .catch(function(e){ if(isNetErr(e)){ $('lerr').textContent='Sin conexión. Probá de nuevo cuando tengas internet.'; return; } clearPw(); clearData(); showLogin((e && e.message || 'No se pudo entrar.').replace(/^Error: /,'')); });
 }
 $('go').onclick=function(){ var p=$('pw').value; if(!p){$('lerr').textContent='Ingresá la clave.';return;} $('lerr').textContent=''; tryLogin(p); };
 $('pw').onkeydown=function(e){ if(e.key==='Enter') $('go').click(); };
-$('out').onclick=function(){ clearPw(); PW=null; DATA=null; SEL=null; $('sheet').className='sheet hide'; showLogin(''); };
-$('ref').onclick=function(){ reload(); };
+$('out').onclick=function(){ clearPw(); clearData(); PW=null; DATA=null; SEL=null; $('sheet').className='sheet hide'; showLogin(''); };
+$('ref').onclick=function(){ reload(true); };
+$('who').onclick=function(){ askWho(); };
+Array.prototype.forEach.call(document.querySelectorAll('#whoBox [data-w]'),function(b){ b.onclick=function(){ setWho(b.getAttribute('data-w')); $('whoBox').className='modal hide'; showWho(); if(WHO_CB){ var f=WHO_CB; WHO_CB=null; f(); } }; });
+var WHO_CB=null;
+function askWho(cb){ WHO_CB=cb||null; $('whoBox').className='modal'; }
+function showWho(){ var w=getWho(); $('who').textContent='👤 '+(w||'¿Quién?'); }
+window.addEventListener('online',function(){ reload(); });
+window.addEventListener('offline',function(){ OFFLINE=true; netBanner(); });
 
-function reload(){
+function reload(force){
   if(!PW) return;
-  $('upd').textContent='Actualizando...';
-  call('getData',PW).then(function(d){ DATA=d; render(); }).catch(function(e){ $('upd').textContent='No se pudo actualizar.'; });
+  if(force) $('upd').textContent='Actualizando...';
+  call('getData',PW,!!force).then(function(d){ setData(d); render(); }).catch(function(e){ if(isNetErr(e)){ OFFLINE=true; netBanner(); } else if(force){ $('upd').textContent='No se pudo actualizar.'; } });
 }
 
 var ORDER={demorado:0,porvencer:1,plazo:2,sin:3};
@@ -135,7 +161,8 @@ function render(){
   }).join('') || '<div class="sub">No hay trabajos para mostrar.</div>';
   Array.prototype.forEach.call($('list').querySelectorAll('.card'),function(c){ c.onclick=function(){ openSheet(c.getAttribute('data-id')); }; });
   renderDetail();
-  var now=new Date(); $('upd').textContent='Actualizado '+now.getHours()+':'+('0'+now.getMinutes()).slice(-2);
+  var now=new Date(DATA_AT||Date.now()); $('upd').textContent='Actualizado '+now.getHours()+':'+('0'+now.getMinutes()).slice(-2);
+  netBanner(); showWho();
 }
 
 var OPEN_PANEL = null;
@@ -150,10 +177,31 @@ function icon(kind){
   return '<svg class="i-'+kind+'" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M14 2.5A11.5 11.5 0 0 0 14 25.5Z" fill="currentColor"/></svg>';
 }
 
+function estadoDe(k,dias,est){ if(k<0) return 'sin'; if(est==null||dias==null) return 'plazo'; if(dias>est) return 'demorado'; if(dias>=est-1) return 'porvencer'; return 'plazo'; }
 function doSave(t,k,resp,notas,msg){
-  if(BUSY) return; BUSY=true;
-  call('setEtapa',PW,t.id,k,resp||'',typeof notas==='string'?notas:t.notas).then(function(d){ DATA=d; BUSY=false; OPEN_PANEL=null; render(); toast(msg||'Guardado ✓'); })
-  .catch(function(e){ BUSY=false; toast((e&&e.message||'No se pudo guardar.').replace(/^Error: /,'')); });
+  if(BUSY) return;
+  if(!getWho()){ askWho(function(){ doSave(t,k,resp,notas,msg); }); return; }
+  BUSY=true;
+  var before=JSON.parse(JSON.stringify(t));
+  var nn=(typeof notas==='string')?notas:t.notas;
+  var moved=(t.etapa!==k);
+  // se muestra el cambio al instante; si el servidor falla, se vuelve atrás
+  t.etapa=k; t.responsable=resp||''; t.notas=nn;
+  if(moved){ t.dias=0; t.entro=''; }
+  t.est=DATA.etapas[k].dias; t.estado=estadoDe(k,t.dias,t.est);
+  OPEN_PANEL=null; render(); toast(msg||'Guardado ✓');
+  call('setEtapa',PW,t.id,k,resp||'',nn,getWho()).then(function(r){
+    BUSY=false;
+    var nt=r&&r.trabajo;
+    if(nt){ for(var i=0;i<DATA.trabajos.length;i++) if(String(DATA.trabajos[i].id)===String(nt.id)) DATA.trabajos[i]=nt; DATA_AT=Date.now(); saveData(); }
+    else if(r&&r.trabajos){ setData(r); }
+    render();
+  }).catch(function(e){
+    BUSY=false;
+    for(var i=0;i<DATA.trabajos.length;i++) if(String(DATA.trabajos[i].id)===String(before.id)) DATA.trabajos[i]=before;
+    if(isNetErr(e)){ OFFLINE=true; toast('Sin conexión: no se guardó. Probá de nuevo.'); } else toast((e&&e.message||'No se pudo guardar.').replace(/^Error: /,''));
+    render();
+  });
 }
 function startMove(t,k){
   var r=DATA.etapas[k].responsables;
@@ -214,8 +262,16 @@ function renderDetail(){
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 (function init(){
   var p = savedPw();
-  if(p) tryLogin(p); else showLogin('');
+  var c = p ? savedData() : null;
+  if(p && c){
+    // abre al instante con lo último guardado y se actualiza por detrás
+    PW=p; DATA=c.d; DATA_AT=c.t||0; $('login').className='hide'; $('app').className=''; render();
+    call('getData',p).then(function(d){ setData(d); render(); }).catch(function(e){
+      if(isNetErr(e)){ OFFLINE=true; netBanner(); } else { clearPw(); clearData(); PW=null; DATA=null; SEL=null; $('sheet').className='sheet hide'; showLogin('La clave cambió. Ingresala de nuevo.'); }
+    });
+  } else if(p) tryLogin(p); else showLogin('');
   setInterval(function(){ if(PW && !BUSY && !SEL && !document.hidden) reload(); }, 60000);
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden && PW && !BUSY) reload(); });
 })();
 </script>
 </body>

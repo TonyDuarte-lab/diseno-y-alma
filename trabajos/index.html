@@ -41,7 +41,7 @@ button.link{width:auto;border:none;background:none;color:var(--tx2);font-weight:
 .chip{border:none;background:none;border-bottom:3px solid transparent;border-radius:0;width:auto;padding:0.4rem 0.45rem;font-size:0.78rem;font-weight:400;white-space:nowrap}
 .chip.on{color:var(--ac);border-bottom-color:var(--ac);font-weight:700}
 .sheet{position:fixed;inset:0;background:var(--bg);z-index:10;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-.sheet .wrap{padding-bottom:8.75rem}
+.sheet .wrap{padding-bottom:16rem}
 .back{width:auto;border:none;background:none;font-size:1.125rem;color:var(--ac);padding:0.375rem 0.25rem;font-weight:600}
 .steps{margin:0.875rem 0 0.375rem}
 .step{display:flex;gap:0.75rem;align-items:flex-start;padding:0.625rem 0.25rem;border-radius:0.625rem;cursor:pointer;position:relative}
@@ -64,6 +64,17 @@ details summary{cursor:pointer;color:var(--tx2);font-size:1.062rem;padding:0.375
 label{font-size:1rem;color:var(--tx2);display:block;margin:0.625rem 0 0.25rem}
 .hide{display:none!important}
 #app{padding-bottom:6rem}
+.money{display:flex;gap:0.5rem;margin:0.75rem 0 0.25rem;border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);padding:0.6rem 0}
+.money div{flex:1;min-width:0}.money b{display:block;font-size:0.82rem;white-space:nowrap}.money span{font-size:0.7rem;color:var(--tx2)}
+.money .debe b{color:var(--rd)}.money .ok b{color:var(--ok)}
+.owe{color:var(--rd);font-weight:700}.paid{color:var(--ok)}
+.banner{background:var(--acbg);color:var(--tx);border-radius:0.75rem;padding:0.75rem;margin:0.75rem 0}
+.banner .pchips{margin-top:0.5rem}
+input.q{margin-bottom:0.5rem}
+.sumline{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem}
+.srow{display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid var(--bd)}
+a.btnlink{display:block;text-align:center;text-decoration:none;border:1px solid var(--bd);border-radius:0.5rem;padding:0.6rem;font-weight:600;color:var(--tx);margin-top:0.5rem}
+a.btnlink.pri{background:var(--ac);color:#fff;border-color:var(--ac)}
 .mic{position:fixed;right:1rem;bottom:calc(1rem + env(safe-area-inset-bottom));z-index:9;width:auto;border-radius:2rem;padding:0.9rem 1.3rem;font-size:1rem;box-shadow:0 2px 10px rgba(0,0,0,.3)}
 .mic.rec{background:var(--rd);border-color:var(--rd);color:#fff}
 .vopt{text-align:left}
@@ -90,6 +101,8 @@ label{font-size:1rem;color:var(--tx2);display:block;margin:0.625rem 0 0.25rem}
 <div id="app" class="hide">
   <div class="top"><div class="row" style="justify-content:flex-start"><img src="logo-96.png" alt="" width="36" height="36" style="border-radius:0.5rem"><h1>Trabajos</h1></div><div class="tbtn"><button class="link" id="who">👤</button><button class="link" id="ref">Actualizar</button><button class="link" id="out">Salir</button></div></div>
   <div id="net" class="net hide"></div>
+  <input id="q" class="q" type="search" placeholder="🔍 Buscar cliente o zona" autocomplete="off">
+  <div class="sumline"><span id="sum" class="sub"></span><button class="link" id="resBtn">Resumen</button></div>
   <div class="chips" id="chips"></div>
   <div id="list"></div>
   <div class="sub" style="text-align:center;margin-top:0.5rem" id="upd"></div>
@@ -98,6 +111,7 @@ label{font-size:1rem;color:var(--tx2);display:block;margin:0.625rem 0 0.25rem}
 <div id="sheet" class="sheet hide"></div>
 <button id="mic" class="pri mic hide">🎤 Hablar</button>
 <div id="voiceBox" class="modal hide"><div class="box" id="voiceIn"></div></div>
+<div id="resBox" class="modal hide"><div class="box" id="resIn"></div></div>
 <div id="toast" class="toast hide"></div>
 <div id="whoBox" class="modal hide"><div class="box"><h1>¿Quién sos?</h1><p class="sub">Así queda anotado en el historial quién hizo cada cambio.</p><button class="pri big" data-w="Tony">Tony</button><button class="big" data-w="Leo">Leo</button><button class="big" data-w="Otro">Otro</button></div></div>
 
@@ -148,15 +162,62 @@ function reload(force){
   call('getData',PW,!!force).then(function(d){ setData(d); render(); }).catch(function(e){ if(isNetErr(e)){ OFFLINE=true; netBanner(); } else if(force){ $('upd').textContent='No se pudo actualizar.'; } });
 }
 
+
+var QUERY='', NOTIFY=null, MSG_TEXT=null, PAYBUSY=false;
+function money(n){ try{ return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n); }catch(e){ return '$'+Math.round(n); } }
+function hasMoney(t){ return t.total!=null; }
+function stageIdx(key){ for(var k=0;k<DATA.etapas.length;k++){ if(norm(DATA.etapas[k].nombre).indexOf(key)>=0) return k; } return -1; }
+function toCollect(t){ var li=stageIdx('listo'); return hasMoney(t) && t.saldo>0 && li>=0 && t.etapa>=li; }
+function waNum(tel){ var d=String(tel||'').replace(/[^0-9]/g,''); if(d.length===10) return '549'+d; if(d.length===11 && d.charAt(0)==='0') return '549'+d.slice(1); return d; }
+function fmtDate(d){ return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2); }
+function etaFor(t){
+  if(t.etapa<0) return null;
+  var li=stageIdx('listo'); if(li<0||t.etapa>li) return null;
+  var rem=Math.max(0,(t.est||0)-(t.dias||0));
+  for(var k=t.etapa+1;k<=li;k++){ rem+=DATA.etapas[k].dias||0; }
+  var d=new Date(); d.setDate(d.getDate()+rem); return fmtDate(d);
+}
+function msgFor(t){
+  var n=(t.cliente||'').split(' ')[0]; var e=t.etapa>=0?norm(DATA.etapas[t.etapa].nombre):'';
+  var debe = (hasMoney(t)&&t.saldo>0) ? ' Queda pendiente el saldo de '+money(t.saldo)+'.' : '';
+  if(e.indexOf('postventa')>=0) return 'Hola '+n+', ¿cómo viene funcionando tu frente? Si necesitás algo, avisanos.';
+  if(e.indexOf('instalado')>=0) return 'Hola '+n+', tu frente quedó instalado. ¡Gracias por confiar en Diseño y Alma!'+debe;
+  if(e.indexOf('listo')>=0) return 'Hola '+n+', ¡buenas noticias! Tu frente ya está listo para instalar. Coordinemos el día de la instalación.'+debe;
+  if(e.indexOf('terminac')>=0) return 'Hola '+n+', tu frente está en las terminaciones finales, ya falta poco.';
+  if(e.indexOf('pintur')>=0) return 'Hola '+n+', tu frente ya pasó a pintura.';
+  if(e.indexOf('herrer')>=0) return 'Hola '+n+', tu frente ya está en el taller de herrería, donde se arman y sueldan las piezas.';
+  if(e.indexOf('plegad')>=0) return 'Hola '+n+', te cuento que tu frente ya está en el plegado de la chapa.';
+  if(e.indexOf('50')>=0) return 'Hola '+n+', recibimos tu seña, ¡gracias! Ya arrancamos con tu trabajo y te vamos a ir avisando cada avance.';
+  return 'Hola '+n+', te escribimos por el avance de tu trabajo.';
+}
+function waLink(t,text){ var num=waNum(t.tel); return 'https://wa.me/'+(num?num:'')+'?text='+encodeURIComponent(text); }
+function replaceJob(nt){ for(var i=0;i<DATA.trabajos.length;i++) if(String(DATA.trabajos[i].id)===String(nt.id)) DATA.trabajos[i]=nt; DATA_AT=Date.now(); saveData(); }
+function resumen(){
+  var rows=DATA.etapas.map(function(e,k){ var js=DATA.trabajos.filter(function(t){return t.etapa===k;}); return '<div class="srow"><span>'+esc(e.nombre)+'</span><b>'+js.length+'</b></div>'; }).join('');
+  var sin=DATA.trabajos.filter(function(t){return t.etapa<0;}).length;
+  var tot=0,ab=0,deb=0,m=0; DATA.trabajos.forEach(function(t){ if(hasMoney(t)){ m++; tot+=t.total; ab+=t.abonado; deb+=t.saldo; } });
+  var del=DATA.trabajos.filter(function(t){return t.estado==='demorado';}).length;
+  var h='<h1>Resumen</h1>'+rows+'<div class="srow"><span>Sin etapa</span><b>'+sin+'</b></div><div class="srow"><span>Demorados</span><b class="owe">'+del+'</b></div>';
+  if(m) h+='<div class="srow"><span>Vendido (presupuestos)</span><b>'+money(tot)+'</b></div><div class="srow"><span>Cobrado</span><b class="paid">'+money(ab)+'</b></div><div class="srow"><span>Por cobrar</span><b class="owe">'+money(deb)+'</b></div>';
+  h+='<button class="big" id="resX">Cerrar</button>';
+  $('resIn').innerHTML=h; $('resBox').className='modal'; $('resX').onclick=function(){ $('resBox').className='modal hide'; };
+}
+$('resBtn').onclick=resumen;
+$('q').oninput=function(){ QUERY=$('q').value; render(); };
+
 var ORDER={demorado:0,porvencer:1,plazo:2,sin:3};
 function render(){
   var T = DATA.trabajos.slice().sort(function(a,b){ return (ORDER[a.estado]-ORDER[b.estado]) || (b.dias||0)-(a.dias||0); });
   var counts={todos:T.length,demorado:0,porvencer:0,sin:0};
   T.forEach(function(t){ if(counts[t.estado]!==undefined) counts[t.estado]++; });
-  var defs=[['todos','Todos'],['demorado','Demorados'],['porvencer','Por vencer'],['sin','Sin etapa']];
+  var anyMoney=T.some(hasMoney); counts.cobrar=T.filter(toCollect).length;
+  var defs=[['todos','Todos'],['demorado','Demorados'],['porvencer','Por vencer'],['sin','Sin etapa']]; if(anyMoney) defs.push(['cobrar','Cobrar']);
+  var debTot=0,debN=0; T.forEach(function(t){ if(hasMoney(t)&&t.saldo>0){ debTot+=t.saldo; debN++; } });
+  $('sum').innerHTML = anyMoney ? 'Por cobrar: <b class="owe">'+money(debTot)+'</b>' : '';
   $('chips').innerHTML = defs.map(function(d){ return '<button class="chip'+(FILTER===d[0]?' on':'')+'" data-f="'+d[0]+'">'+d[1]+' '+(counts[d[0]]||0)+'</button>'; }).join('');
   Array.prototype.forEach.call($('chips').children,function(b){ b.onclick=function(){ FILTER=b.getAttribute('data-f'); render(); }; });
-  var L = T.filter(function(t){ return FILTER==='todos' || t.estado===FILTER; });
+  var qn=norm(QUERY);
+  var L = T.filter(function(t){ return (FILTER==='todos' || (FILTER==='cobrar'?toCollect(t):t.estado===FILTER)) && (!qn || norm(t.cliente+' '+t.zona).indexOf(qn)>=0); });
   var n = DATA.etapas.length;
   $('list').innerHTML = L.map(function(t){
     var tag = t.estado==='demorado' ? 'Demorado' : t.estado==='porvencer' ? 'Por vencer' : t.estado==='sin' ? 'Sin etapa' : 'En plazo';
@@ -166,6 +227,7 @@ function render(){
     return '<div class="card'+(SEL===t.id?' sel':'')+'" data-id="'+esc(t.id)+'"><div class="row"><span class="nm">'+esc(t.cliente)+'</span><span class="tag t-'+t.estado+'">'+tag+'</span></div>'
       +'<div class="sub">'+esc(et)+(t.responsable?' · '+esc(t.responsable):'')+(t.zona?' · '+esc(t.zona):'')+'</div>'
       +(t.etapa>=0?'<div class="row sub" style="margin-top:0.25rem"><span>'+info+'</span><span></span></div>':'')
+      +(hasMoney(t)?'<div class="sub">'+(t.saldo>0?'Saldo <span class="'+(toCollect(t)?'owe':'')+'">'+money(t.saldo)+'</span> de '+money(t.total):'<span class="paid">Pagado '+money(t.total)+' ✓</span>')+'</div>':'')
       +'<div class="bar"><i class="f-'+t.estado+'" style="width:'+pc+'%"></i></div></div>';
   }).join('') || '<div class="sub">No hay trabajos para mostrar.</div>';
   Array.prototype.forEach.call($('list').querySelectorAll('.card'),function(c){ c.onclick=function(){ openSheet(c.getAttribute('data-id')); }; });
@@ -198,7 +260,7 @@ function doSave(t,k,resp,notas,msg){
   t.etapa=k; t.responsable=resp||''; t.notas=nn;
   if(moved){ t.dias=0; t.entro=''; }
   t.est=DATA.etapas[k].dias; t.estado=estadoDe(k,t.dias,t.est);
-  OPEN_PANEL=null; render(); toast(msg||'Guardado ✓');
+  OPEN_PANEL=null; if(moved){ NOTIFY=t.id; NFOPEN=false; MSG_TEXT=null; } render(); toast(msg||'Guardado ✓');
   call('setEtapa',PW,t.id,k,resp||'',nn,getWho()).then(function(r){
     BUSY=false;
     var nt=r&&r.trabajo;
@@ -213,9 +275,56 @@ function doSave(t,k,resp,notas,msg){
   });
 }
 function startMove(t,k){
+  var ii=stageIdx('instalado');
+  if(hasMoney(t) && t.saldo>0 && ii>=0 && k>=ii && !confirm('Ojo: «'+t.cliente+'» todavía debe '+money(t.saldo)+'. ¿Pasarlo igual a «'+DATA.etapas[k].nombre+'»?')) return;
   var r=DATA.etapas[k].responsables;
   if(r.length>1){ OPEN_PANEL=k; renderDetail(); return; }
   doSave(t,k,r[0]||'',undefined, 'Pasó a «'+DATA.etapas[k].nombre+'» ✓');
+}
+
+
+function moneyBlock(t){
+  var eta=etaFor(t); var h='';
+  if(hasMoney(t)){
+    h+='<div class="money"><div><span>Presupuesto</span><b>'+money(t.total)+'</b></div><div class="ok"><span>Abonado</span><b>'+money(t.abonado)+'</b></div><div class="'+(t.saldo>0?'debe':'ok')+'"><span>Saldo</span><b>'+money(t.saldo)+'</b></div></div>';
+    if(t.saldo>0) h+='<details id="payD"><summary>💵 Registrar un pago</summary><input id="payAmt" type="number" inputmode="numeric" placeholder="Monto que pagó (en pesos)"><div style="height:0.5rem"></div><button class="pri" id="payOk">Registrar pago</button><div style="height:0.5rem"></div><button id="payAll">Cobrar todo el saldo ('+money(t.saldo)+')</button></details>';
+  }
+  if(eta) h+='<div class="sub" style="margin-top:0.4rem">Estimado para estar listo: <b>'+eta+'</b></div>';
+  return h;
+}
+function notifyBanner(t){
+  if(NOTIFY!==t.id || t.etapa<0) return '';
+  return '<div class="banner"><div>¿Avisarle a <b>'+esc(t.cliente.split(' ')[0])+'</b> que su trabajo pasó a «'+esc(DATA.etapas[t.etapa].nombre)+'»?</div><div class="pchips"><button class="pchip pri" id="nfYes">📲 Avisar</button><button class="pchip" id="nfNo">Ahora no</button></div></div>';
+}
+function notifyPanel(t){
+  if(t.etapa<0) return '';
+  var txt = MSG_TEXT!==null && MSG_TEXT.id===t.id && MSG_TEXT.stage===t.etapa ? MSG_TEXT.text : msgFor(t);
+  var open = NOTIFY===t.id && NFOPEN ? ' open' : '';
+  return '<details id="nfD" style="margin-top:0.875rem"'+open+'><summary>📲 Avisar al cliente por WhatsApp</summary><textarea id="nfTxt" rows="4">'+esc(txt)+'</textarea>'
+    +'<a class="btnlink pri" id="nfGo" href="'+esc(waLink(t,txt))+'" target="_blank" rel="noopener">Abrir WhatsApp'+(t.tel?'':' (elegís el contacto)')+'</a></details>'
+    +'<details style="margin-top:0.5rem"'+(t.tel?'':'')+'><summary>📞 WhatsApp / teléfono del cliente'+(t.tel?': '+esc(t.tel):'')+'</summary><input id="telIn" type="tel" inputmode="tel" placeholder="Con código de área, sin 0 ni 15 (ej: 1155551234)" value="'+esc(t.tel)+'"><div style="height:0.5rem"></div><button id="telOk">Guardar teléfono</button>'
+    +(t.tel?'<a class="btnlink" href="tel:+'+esc(waNum(t.tel))+'">📞 Llamar</a>':'')+'</details>';
+}
+var NFOPEN=false;
+function wireExtras(t){
+  if($('payOk')){
+    var pay=function(m){ if(PAYBUSY) return; if(!getWho()){ askWho(function(){ pay(m); }); return; } if(!(m>0)){ toast('Ingresá el monto.'); return; }
+      if(!confirm('¿Registrar pago de '+money(m)+' de «'+t.cliente+'»?')) return;
+      PAYBUSY=true;
+      call('setPago',PW,t.id,m,getWho()).then(function(r){ PAYBUSY=false; if(r&&r.trabajo){ replaceJob(r.trabajo); } render(); toast('Pago registrado ✓'); })
+      .catch(function(e){ PAYBUSY=false; toast(isNetErr(e)?'Sin conexión: no se registró.':(e&&e.message||'No se pudo registrar.').replace(/^Error: /,'')); }); };
+    $('payOk').onclick=function(){ pay(Number($('payAmt').value)); };
+    $('payAll').onclick=function(){ pay(t.saldo); };
+  }
+  if($('nfYes')) $('nfYes').onclick=function(){ NFOPEN=true; NOTIFY=t.id; renderDetail(); var d=$('nfD'); if(d&&d.scrollIntoView) d.scrollIntoView({block:'center'}); };
+  if($('nfNo')) $('nfNo').onclick=function(){ NOTIFY=null; NFOPEN=false; renderDetail(); };
+  if($('nfTxt')){
+    $('nfTxt').oninput=function(){ var v=$('nfTxt').value; MSG_TEXT={id:t.id,stage:t.etapa,text:v}; $('nfGo').setAttribute('href',waLink(t,v)); };
+    $('nfGo').onclick=function(){ NOTIFY=null; NFOPEN=false; };
+  }
+  if($('telOk')) $('telOk').onclick=function(){ var v=$('telIn').value;
+    call('setContacto',PW,t.id,v).then(function(r){ if(r&&r.trabajo){ replaceJob(r.trabajo); } render(); toast(v?'Teléfono guardado ✓':'Teléfono borrado'); })
+    .catch(function(e){ toast((e&&e.message||'No se pudo guardar.').replace(/^Error: /,'')); }); };
 }
 
 function renderDetail(){
@@ -230,6 +339,7 @@ function renderDetail(){
   var html = '<div class="wrap"><button class="back" id="bk">← Trabajos</button>'
     +'<div style="margin:0.5rem 0 0.125rem;font-size:1.625rem;font-weight:700">'+esc(t.cliente)+'</div>'
     +'<div class="sub">'+esc(t.zona)+(t.zona?' · ':'')+'cargado el '+esc(t.fecha)+'</div><div style="margin-top:0.5rem">'+late+'</div>'
+    +moneyBlock(t)+notifyBanner(t)
     +'<div class="steps">';
   E.forEach(function(e,k){
     var kind = cur<0 ? 'pend' : k<cur ? 'done' : k===cur ? kindNow : 'pend';
@@ -244,6 +354,7 @@ function renderDetail(){
   if(cur>=0 && E[cur].responsables.length>1){
     html += '<div class="sub" style="margin-top:0.375rem">Cambiar quién lo tiene:</div><div class="pchips">'+E[cur].responsables.map(function(x){ return '<button class="pchip'+(x===t.responsable?' pri':'')+'" data-same="'+esc(x)+'">'+esc(x)+'</button>'; }).join('')+'</div>';
   }
+  html += notifyPanel(t);
   html += '<details style="margin-top:0.875rem"'+(t.notas?' open':'')+'><summary>Notas</summary><textarea id="sNo" rows="3" placeholder="Escribí una nota..."'+(cur<0?' disabled':'')+'>'+esc(t.notas)+'</textarea>'
     +(cur<0?'<div class="sub">Asigná el primer paso para poder escribir notas.</div>':'<div style="height:0.5rem"></div><button id="saveNote">Guardar nota</button>')+'</details>'
     +'<div class="err" id="derr"></div></div>';
@@ -260,6 +371,7 @@ function renderDetail(){
   sh.scrollTop = keep;
 
   $('bk').onclick=closeSheet;
+  wireExtras(t);
   Array.prototype.forEach.call(sh.querySelectorAll('.step'),function(el){ el.onclick=function(){ var k=+el.getAttribute('data-k'); if(k===cur) return; if(BUSY) return; if(confirm('¿Mover «'+t.cliente+'» a «'+E[k].nombre+'»?')) startMove(t,k); }; });
   Array.prototype.forEach.call(sh.querySelectorAll('[data-resp]'),function(b){ b.onclick=function(){ doSave(t,OPEN_PANEL,b.getAttribute('data-resp'),undefined, 'Pasó a «'+E[OPEN_PANEL].nombre+'» ✓'); }; });
   Array.prototype.forEach.call(sh.querySelectorAll('[data-same]'),function(b){ b.onclick=function(){ doSave(t,cur,b.getAttribute('data-same'),undefined, 'Ahora lo tiene '+b.getAttribute('data-same')+' ✓'); }; });
@@ -314,7 +426,7 @@ function vshow(){
   Array.prototype.forEach.call($('voiceIn').querySelectorAll('[data-vj]'),function(b){ b.onclick=function(){ VS.job=VS.cands[+b.getAttribute('data-vj')]; if(VS.k>=0){ var rs=DATA.etapas[VS.k].responsables; VS.resp = respFor(VS.k,VS.words) || (rs.length<=1?(rs[0]||''):null); } vshow(); }; });
   Array.prototype.forEach.call($('voiceIn').querySelectorAll('[data-vk]'),function(b){ b.onclick=function(){ VS.k=+b.getAttribute('data-vk'); var rs=DATA.etapas[VS.k].responsables; VS.resp = respFor(VS.k,VS.words) || (rs.length<=1?(rs[0]||''):null); vshow(); }; });
   Array.prototype.forEach.call($('voiceIn').querySelectorAll('[data-vr]'),function(b){ b.onclick=function(){ VS.resp=DATA.etapas[VS.k].responsables[+b.getAttribute('data-vr')]; vshow(); }; });
-  if($('vok')) $('vok').onclick=function(){ var j=VS.job,k=VS.k,r=VS.resp; vclose(); doSave(j,k,r,undefined,'Listo: '+j.cliente+' → '+DATA.etapas[k].nombre+' ✓'); };
+  if($('vok')) $('vok').onclick=function(){ var j=VS.job,k=VS.k,r=VS.resp; vclose(); doSave(j,k,r,undefined,'Listo: '+j.cliente+' → '+DATA.etapas[k].nombre+' ✓'); if(j.etapa===k) { openSheet(j.id); } };
   $('vretry').onclick=function(){ vclose(); startVoice(); };
   $('vno').onclick=vclose;
 }
@@ -338,7 +450,7 @@ function startVoice(){
 }
 $('mic').onclick=function(){ startVoice(); };
 
-var VERSION='8';
+var VERSION='9';
 if('serviceWorker' in navigator){
   var hadSW = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(function(){});

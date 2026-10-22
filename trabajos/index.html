@@ -345,7 +345,7 @@ function renderDetail(){
   sh.className='sheet';
   var E = DATA.etapas, cur=t.etapa;
   var kindNow = t.estado==='demorado' ? 'late' : t.estado==='porvencer' ? 'por' : 'now';
-  var late = t.estado==='demorado' ? '<span class="tag t-demorado">Demorado: '+(t.dias-t.est)+' día(s) de más</span>' : t.estado==='porvencer' ? '<span class="tag t-porvencer">Por vencer</span>' : t.estado==='sin' ? '<span class="tag t-sin">Sin etapa</span>' : '<span class="tag t-plazo">En plazo</span>';
+  var late = isFin(t) ? '<span class="tag t-plazo">Finalizado</span>' : t.estado==='demorado' ? '<span class="tag t-demorado">Demorado: '+(t.dias-t.est)+' día(s) de más</span>' : t.estado==='porvencer' ? '<span class="tag t-porvencer">Por vencer</span>' : t.estado==='sin' ? '<span class="tag t-sin">Sin etapa</span>' : '<span class="tag t-plazo">En plazo</span>';
   var html = '<div class="wrap"><button class="back" id="bk">← Trabajos</button>'
     +'<div style="margin:0.5rem 0 0.125rem;font-size:1.625rem;font-weight:700">'+esc(t.cliente)+'</div>'
     +'<div class="sub">'+esc(t.zona)+(t.zona?' · ':'')+'cargado el '+esc(t.fecha)+'</div><div style="margin-top:0.5rem">'+late+'</div>'

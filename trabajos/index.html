@@ -167,6 +167,7 @@ var QUERY='', NOTIFY=null, MSG_TEXT=null, PAYBUSY=false;
 function money(n){ try{ return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n); }catch(e){ return '$'+Math.round(n); } }
 function hasMoney(t){ return t.total!=null; }
 function stageIdx(key){ for(var k=0;k<DATA.etapas.length;k++){ if(norm(DATA.etapas[k].nombre).indexOf(key)>=0) return k; } return -1; }
+function isFin(t){ var pi=stageIdx('postventa'); return pi>=0 && t.etapa===pi; }
 function toCollect(t){ var li=stageIdx('listo'); return hasMoney(t) && t.saldo>0 && li>=0 && t.etapa>=li; }
 function waNum(tel){ var d=String(tel||'').replace(/[^0-9]/g,''); if(d.length===10) return '549'+d; if(d.length===11 && d.charAt(0)==='0') return '549'+d.slice(1); return d; }
 function fmtDate(d){ return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2); }
@@ -208,19 +209,19 @@ $('q').oninput=function(){ QUERY=$('q').value; render(); };
 var ORDER={demorado:0,porvencer:1,plazo:2,sin:3};
 function render(){
   var T = DATA.trabajos.slice().sort(function(a,b){ return (ORDER[a.estado]-ORDER[b.estado]) || (b.dias||0)-(a.dias||0); });
-  var counts={todos:T.length,demorado:0,porvencer:0,sin:0};
-  T.forEach(function(t){ if(counts[t.estado]!==undefined) counts[t.estado]++; });
-  var anyMoney=T.some(hasMoney); counts.cobrar=T.filter(toCollect).length;
-  var defs=[['todos','Todos'],['demorado','Demorados'],['porvencer','Por vencer'],['sin','Sin etapa']]; if(anyMoney) defs.push(['cobrar','Cobrar']);
+  var counts={todos:0,demorado:0,porvencer:0,sin:0,fin:0};
+  T.forEach(function(t){ if(isFin(t)){ counts.fin++; } else { counts.todos++; if(counts[t.estado]!==undefined) counts[t.estado]++; } });
+  var anyMoney=T.some(hasMoney); counts.cobrar=T.filter(function(t){ return toCollect(t)&&!isFin(t); }).length;
+  var defs=[['todos','Todos'],['demorado','Demorados'],['porvencer','Por vencer'],['sin','Sin etapa'],['fin','Finalizados']]; if(anyMoney) defs.push(['cobrar','Cobrar']);
   var debTot=0,debN=0; T.forEach(function(t){ if(hasMoney(t)&&t.saldo>0){ debTot+=t.saldo; debN++; } });
   $('sum').innerHTML = anyMoney ? 'Por cobrar: <b class="owe">'+money(debTot)+'</b>' : '';
   $('chips').innerHTML = defs.map(function(d){ return '<button class="chip'+(FILTER===d[0]?' on':'')+'" data-f="'+d[0]+'">'+d[1]+' '+(counts[d[0]]||0)+'</button>'; }).join('');
   Array.prototype.forEach.call($('chips').children,function(b){ b.onclick=function(){ FILTER=b.getAttribute('data-f'); render(); }; });
   var qn=norm(QUERY);
-  var L = T.filter(function(t){ return (FILTER==='todos' || (FILTER==='cobrar'?toCollect(t):t.estado===FILTER)) && (!qn || norm(t.cliente+' '+t.zona).indexOf(qn)>=0); });
+  var L = T.filter(function(t){ return (FILTER==='fin' ? isFin(t) : !isFin(t) && (FILTER==='todos' || (FILTER==='cobrar'?toCollect(t):t.estado===FILTER))) && (!qn || norm(t.cliente+' '+t.zona).indexOf(qn)>=0); });
   var n = DATA.etapas.length;
   $('list').innerHTML = L.map(function(t){
-    var tag = t.estado==='demorado' ? 'Demorado' : t.estado==='porvencer' ? 'Por vencer' : t.estado==='sin' ? 'Sin etapa' : 'En plazo';
+    var tag = isFin(t) ? 'Finalizado' : t.estado==='demorado' ? 'Demorado' : t.estado==='porvencer' ? 'Por vencer' : t.estado==='sin' ? 'Sin etapa' : 'En plazo';
     var et = t.etapa>=0 ? DATA.etapas[t.etapa].nombre : 'Etapa por asignar';
     var pc = t.etapa>=0 ? Math.round((t.etapa+1)/n*100) : 0;
     var info = t.etapa>=0 ? 'Paso '+(t.etapa+1)+' de '+n+(t.dias!=null ? ' · '+t.dias+' d'+(t.est!=null?' de '+t.est:'') : '') : '';
@@ -249,8 +250,17 @@ function icon(kind){
 }
 
 function estadoDe(k,dias,est){ if(k<0) return 'sin'; if(est==null||dias==null) return 'plazo'; if(dias>est) return 'demorado'; if(dias>=est-1) return 'porvencer'; return 'plazo'; }
-function doSave(t,k,resp,notas,msg){
+function doSave(t,k,resp,notas,msg,settled){
   if(BUSY) return;
+  var pv=stageIdx('postventa');
+  if(!settled && k===pv && t.etapa!==k && hasMoney(t) && t.saldo>0){
+    if(!getWho()){ askWho(function(){ doSave(t,k,resp,notas,msg); }); return; }
+    if(!confirm('«'+t.cliente+'» pasa a Postventa: se marca TODO cobrado. Se registra el pago de '+money(t.saldo)+' y queda en $0. ¿Confirmás?')) return;
+    if(PAYBUSY) return; PAYBUSY=true; toast('Registrando el cobro...');
+    call('setPago',PW,t.id,t.saldo,getWho()).then(function(r){ PAYBUSY=false; var live=t; if(r&&r.trabajo){ replaceJob(r.trabajo); live=r.trabajo; } doSave(live,k,resp,notas,msg,true); })
+    .catch(function(e){ PAYBUSY=false; toast(isNetErr(e)?'Sin conexión: no se registró el cobro ni el cambio.':(e&&e.message||'No se pudo registrar el cobro.').replace(/^Error: /,'')); });
+    return;
+  }
   if(!getWho()){ askWho(function(){ doSave(t,k,resp,notas,msg); }); return; }
   BUSY=true;
   var before=JSON.parse(JSON.stringify(t));
@@ -276,7 +286,7 @@ function doSave(t,k,resp,notas,msg){
 }
 function startMove(t,k){
   var ii=stageIdx('instalado');
-  if(hasMoney(t) && t.saldo>0 && ii>=0 && k>=ii && !confirm('Ojo: «'+t.cliente+'» todavía debe '+money(t.saldo)+'. ¿Pasarlo igual a «'+DATA.etapas[k].nombre+'»?')) return;
+  if(hasMoney(t) && t.saldo>0 && ii>=0 && k>=ii && k!==stageIdx('postventa') && !confirm('Ojo: «'+t.cliente+'» todavía debe '+money(t.saldo)+'. ¿Pasarlo igual a «'+DATA.etapas[k].nombre+'»?')) return;
   var r=DATA.etapas[k].responsables;
   if(r.length>1){ OPEN_PANEL=k; renderDetail(); return; }
   doSave(t,k,r[0]||'',undefined, 'Pasó a «'+DATA.etapas[k].nombre+'» ✓');
@@ -335,7 +345,7 @@ function renderDetail(){
   sh.className='sheet';
   var E = DATA.etapas, cur=t.etapa;
   var kindNow = t.estado==='demorado' ? 'late' : t.estado==='porvencer' ? 'por' : 'now';
-  var late = t.estado==='demorado' ? '<span class="tag t-demorado">Demorado: '+(t.dias-t.est)+' día(s) de más</span>' : t.estado==='porvencer' ? '<span class="tag t-porvencer">Por vencer</span>' : t.estado==='sin' ? '<span class="tag t-sin">Sin etapa</span>' : '<span class="tag t-plazo">En plazo</span>';
+  var late = isFin(t) ? '<span class="tag t-plazo">Finalizado</span>' : t.estado==='demorado' ? '<span class="tag t-demorado">Demorado: '+(t.dias-t.est)+' día(s) de más</span>' : t.estado==='porvencer' ? '<span class="tag t-porvencer">Por vencer</span>' : t.estado==='sin' ? '<span class="tag t-sin">Sin etapa</span>' : '<span class="tag t-plazo">En plazo</span>';
   var html = '<div class="wrap"><button class="back" id="bk">← Trabajos</button>'
     +'<div style="margin:0.5rem 0 0.125rem;font-size:1.625rem;font-weight:700">'+esc(t.cliente)+'</div>'
     +'<div class="sub">'+esc(t.zona)+(t.zona?' · ':'')+'cargado el '+esc(t.fecha)+'</div><div style="margin-top:0.5rem">'+late+'</div>'

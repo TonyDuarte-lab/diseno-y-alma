@@ -1074,8 +1074,8 @@
         <input type="tel" name="telefono" required placeholder="11 1234 5678" autocomplete="tel">
       </div>
       <div class="field">
-        <label>Email <span class="req">*</span></label>
-        <input type="email" name="email" placeholder="tu@email.com" required autocomplete="email">
+        <label>Email <small>(opcional)</small></label>
+        <input type="email" name="email" placeholder="tu@email.com" autocomplete="email">
       </div>
     </div>
     <div class="form-row">
@@ -1108,8 +1108,8 @@
       </div>
     </div>
     <div class="field">
-      <label>Contanos tu proyecto <span class="req">*</span></label>
-      <textarea name="mensaje" required placeholder="Medidas, estilo, materiales, dudas..."></textarea>
+      <label>Contanos tu proyecto <small>(opcional)</small></label>
+      <textarea name="mensaje" placeholder="Medidas, estilo, materiales, dudas..."></textarea>
     </div>
 
     <button type="submit" class="btn btn-primary" id="quoteSubmitBtn">
@@ -1677,7 +1677,7 @@ if(quoteForm){
     const emailInput = quoteForm.querySelector('input[name="email"]');
     const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email);
     let emailError = document.getElementById('quoteEmailError');
-    if(!data.email || !emailValido){
+    if(data.email && !emailValido){
       if(!emailError){
         emailError = document.createElement('p');
         emailError.id = 'quoteEmailError';
@@ -1686,9 +1686,7 @@ if(quoteForm){
         emailError.style.marginTop = '-8px';
         emailInput.closest('.field').appendChild(emailError);
       }
-      emailError.textContent = data.email
-        ? 'Ese email no parece válido.'
-        : 'Necesitamos tu email para poder enviarte el presupuesto.';
+      emailError.textContent = 'Ese email no parece válido.';
       emailInput.focus();
       submitBtn.disabled = false;
       btnLabel.textContent = 'Solicitar presupuesto';

@@ -1604,7 +1604,7 @@ const attribution = captureAttribution();
 
 /* Código de referencia de esta visita (ej: A7K2). Viaja en el mensaje de
    WhatsApp y se anota en la planilla, así cada chat se puede unir con su
-   origen (Google Ads / Campaña Tony) y con su comisión. */
+   origen (Campaña Google / Web) y con su comisión. */
 function getVisitRef(){
   let ref = '';
   try{ ref = sessionStorage.getItem('visit_ref') || ''; }catch(e){}
@@ -1620,8 +1620,8 @@ const visitRef = getVisitRef();
 /* Traduce el código de origen a un texto claro para vos, incluido en el
    mensaje de WhatsApp — así sabés al toque a quién corresponde la comisión. */
 function attributionLabel(){
-  if(attribution.origen === 'google_ads') return 'Google Ads (campaña paga)';
-  return 'Campaña Tony (texto para medir parámetros y efectividad)';
+  if(attribution.origen === 'google_ads') return 'Campaña Google';
+  return 'Web';
 }
 
 /* Reescribe todos los botones de WhatsApp de la página (nav, flotante, hero,

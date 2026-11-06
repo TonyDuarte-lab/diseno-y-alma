@@ -995,6 +995,24 @@
     }
   }
 </script>
+
+<style>
+/* Configurador (precio desde + extras + color) */
+.cfg-price{margin:6px 0 14px;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,122,26,.45);background:rgba(255,122,26,.10)}
+.cfg-price small{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim)}
+.cfg-price strong{font-family:'Anton',sans-serif;font-weight:400;font-size:1.7rem;line-height:1.1;color:var(--fire-1);letter-spacing:.02em}
+.cfg-price span{display:block;font-size:.8rem;color:var(--text-dim)}
+.cfg-group{margin-bottom:12px}
+.cfg-group > label{display:block;font-size:.85rem;font-weight:600;margin-bottom:6px}
+.cfg-group > label small{font-weight:400;color:var(--text-dim)}
+.cfg-chips{display:flex;flex-wrap:wrap;gap:6px}
+.cfg-chip{border:1.5px solid rgba(255,200,140,.22);background:rgba(255,255,255,.03);color:var(--text);border-radius:999px;padding:7px 12px;font-size:.82rem;cursor:pointer;font-family:inherit;line-height:1.2;display:inline-flex;align-items:center;gap:6px}
+.cfg-chip:hover{border-color:rgba(255,122,26,.6)}
+.cfg-chip.on{border-color:var(--fire-2);background:rgba(255,122,26,.16)}
+.cfg-chip.on::before{content:"✓";color:var(--fire-2);font-weight:700}
+.cfg-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,.3);display:inline-block}
+.cfg-help{font-size:.75rem;color:var(--text-dim);margin-top:5px}
+</style>
 </head>
 <body>
 
@@ -1061,6 +1079,29 @@
         <div class="hero-form-card">
           <h2>Contanos tu proyecto</h2>
           <p>Completá tus datos y te contactamos por WhatsApp con tu presupuesto, sin cargo.</p>
+          <div class="cfg-price"><small>Precio desde</small><strong>$2.375.000</strong><span>Frente con puerta guillotina y bajo parrilla incluido</span></div>
+          <div class="cfg-group">
+            <label>Sumale extras <small>(opcional, se cotizan aparte)</small></label>
+            <div class="cfg-chips" data-cfg="extras">
+              <button type="button" class="cfg-chip" data-v="Interior de parrilla modular" title="Sistema de levantamiento, brasero al costado y chapa que evita que se filtren las cenizas">Interior de parrilla modular</button>
+              <button type="button" class="cfg-chip" data-v="Bajo mesada">Bajo mesada</button>
+              <button type="button" class="cfg-chip" data-v="Alacena">Alacena</button>
+              <button type="button" class="cfg-chip" data-v="Cajón carbonero">Cajón carbonero</button>
+              <button type="button" class="cfg-chip" data-v="Cajón cubiertero">Cajón cubiertero</button>
+            </div>
+            <p class="cfg-help" id="cfgHelp" hidden>Interior modular: sistema de levantamiento, brasero al costado y chapa que evita que se filtren las cenizas.</p>
+          </div>
+          <div class="cfg-group">
+            <label>Color <small>(pintura al horno)</small></label>
+            <div class="cfg-chips" data-cfg="color" data-single>
+              <button type="button" class="cfg-chip on" data-v="Black Edition (full negro)"><i class="cfg-dot" style="background:#0a0a0a"></i>Black Edition</button>
+              <button type="button" class="cfg-chip" data-v="Blanco"><i class="cfg-dot" style="background:#f2efe9"></i>Blanco</button>
+              <button type="button" class="cfg-chip" data-v="Gris"><i class="cfg-dot" style="background:#8a8f94"></i>Gris</button>
+              <button type="button" class="cfg-chip" data-v="Grafito"><i class="cfg-dot" style="background:#3a3d40"></i>Grafito</button>
+              <button type="button" class="cfg-chip" data-v="Verde oliva"><i class="cfg-dot" style="background:#5f6b45"></i>Verde oliva</button>
+              <button type="button" class="cfg-chip" data-v="Otro color (a consultar)"><i class="cfg-dot" style="background:conic-gradient(#e6350f,#ffd35c,#3a7bd5,#e6350f)"></i>Otro</button>
+            </div>
+          </div>
           <form class="quote-form" id="quoteForm" novalidate>
     <div class="form-row">
       <div class="field">
@@ -1643,6 +1684,23 @@ function tagWhatsAppLinksWithOrigin(){
 }
 tagWhatsAppLinksWithOrigin();
 
+const cfgElegidos = function(grupo){
+  return Array.prototype.map.call(document.querySelectorAll('[data-cfg="' + grupo + '"] .cfg-chip.on'), function(b){ return b.getAttribute('data-v'); });
+};
+document.querySelectorAll('[data-cfg]').forEach(function(g){
+  g.addEventListener('click', function(e){
+    const b = e.target.closest('.cfg-chip'); if(!b) return;
+    if(g.hasAttribute('data-single')){ g.querySelectorAll('.cfg-chip').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on'); }
+    else { b.classList.toggle('on'); }
+    const help = document.getElementById('cfgHelp');
+    if(help) help.hidden = cfgElegidos('extras').indexOf('Interior de parrilla modular') < 0;
+  });
+});
+const cfgTexto = function(){
+  const ex = cfgElegidos('extras'); const col = cfgElegidos('color')[0] || '';
+  return 'Extras: ' + (ex.length ? ex.join(', ') : 'ninguno') + '. Color: ' + col + '.';
+};
+
 const quoteForm = document.getElementById('quoteForm');
 if(quoteForm){
   quoteForm.addEventListener('submit', function(e){
@@ -1664,7 +1722,7 @@ if(quoteForm){
       producto_interes: fd.get('tipo_trabajo') || '',
       ancho: fd.get('ancho') || '',
       alto: fd.get('alto') || '',
-      mensaje: ((fd.get('mensaje') || '').trim() + ' [Ref: ' + visitRef + ']').trim(),
+      mensaje: (cfgTexto() + ' ' + (fd.get('mensaje') || '').trim() + ' [Ref: ' + visitRef + ']').trim(),
       origen: attribution.origen || 'directo',
       utm_source: attribution.utm_source || '',
       utm_medium: attribution.utm_medium || '',

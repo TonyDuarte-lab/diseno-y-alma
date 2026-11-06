@@ -1124,19 +1124,7 @@
         <label>Localidad <span class="req">*</span></label>
         <input type="text" name="localidad" required placeholder="Ciudad / barrio">
       </div>
-      <div class="field">
-        <label>Tipo de trabajo <span class="req">*</span></label>
-        <select name="tipo_trabajo" required>
-          <option value="" disabled selected>Elegí una opción</option>
-          <option>Frente de parrilla</option>
-          <option>Frentes de Parrilla con Módulos de Cocción Integrados</option>
-          <option>Muebles bajo asador</option>
-          <option>Mueble bajo mesada</option>
-          <option>Cajones leñeros</option>
-          <option>Herrería y emparrillados</option>
-          <option>Pérgolas</option>
-        </select>
-      </div>
+      <input type="hidden" name="tipo_trabajo" value="Frente de parrilla">
     </div>
     <div class="form-row">
       <div class="field">
@@ -1149,8 +1137,8 @@
       </div>
     </div>
     <div class="field">
-      <label>Contanos tu proyecto <small>(opcional)</small></label>
-      <textarea name="mensaje" placeholder="Medidas, estilo, materiales, dudas..."></textarea>
+      <label>Comentarios <small>(opcional)</small></label>
+      <textarea name="mensaje" placeholder="¿Algo más? Ej: tenés horno de barro al lado, querés mandar una foto…"></textarea>
     </div>
 
     <button type="submit" class="btn btn-primary" id="quoteSubmitBtn">

@@ -1099,12 +1099,12 @@
     </div>
     <div class="form-row">
       <div class="field">
-        <label>Ancho aprox. (cm)</label>
-        <input type="number" name="ancho" min="0" placeholder="opcional">
+        <label>Ancho aprox. (cm) <span class="req">*</span></label>
+        <input type="number" name="ancho" min="30" max="600" required inputmode="numeric" placeholder="Ej: 150 (boca de la parrilla)">
       </div>
       <div class="field">
-        <label>Alto aprox. (cm)</label>
-        <input type="number" name="alto" min="0" placeholder="opcional">
+        <label>Alto aprox. (cm) <span class="req">*</span></label>
+        <input type="number" name="alto" min="30" max="600" required inputmode="numeric" placeholder="Ej: 245 (del piso al techo)">
       </div>
     </div>
     <div class="field">
@@ -1693,6 +1693,37 @@ if(quoteForm){
       return;
     } else if(emailError){
       emailError.remove();
+    }
+
+    // Validación: no se envía (ni cuenta como conversión) si faltan datos reales.
+    const soloDigitos = data.telefono.replace(/\D/g, '');
+    const anchoNum = parseFloat(String(data.ancho).replace(',', '.'));
+    const altoNum = parseFloat(String(data.alto).replace(',', '.'));
+    let faltante = null;
+    if(!/[a-záéíóúñ]{2,}/i.test(data.nombre)) faltante = ['nombre', 'Escribí tu nombre.'];
+    else if(soloDigitos.length < 8 || soloDigitos.length > 15) faltante = ['telefono', 'Escribí un WhatsApp válido (ej: 11 1234 5678).'];
+    else if(!/[a-záéíóúñ]{3,}/i.test(data.localidad)) faltante = ['localidad', 'Escribí tu localidad o barrio.'];
+    else if(!data.tipo_trabajo) faltante = ['tipo_trabajo', 'Elegí el tipo de trabajo.'];
+    else if(!(anchoNum >= 30 && anchoNum <= 600)) faltante = ['ancho', 'Poné el ancho aproximado en cm (ej: 150).'];
+    else if(!(altoNum >= 30 && altoNum <= 600)) faltante = ['alto', 'Poné el alto aproximado en cm (ej: 245).'];
+    let formError = document.getElementById('quoteFormError');
+    if(faltante){
+      if(!formError){
+        formError = document.createElement('p');
+        formError.id = 'quoteFormError';
+        formError.style.color = 'var(--fire-1)';
+        formError.style.fontSize = '0.9rem';
+        formError.style.margin = '8px 0';
+        submitBtn.parentNode.insertBefore(formError, submitBtn);
+      }
+      formError.textContent = faltante[1];
+      const campo = quoteForm.querySelector('[name="' + faltante[0] + '"]');
+      if(campo) campo.focus();
+      submitBtn.disabled = false;
+      btnLabel.textContent = 'Solicitar presupuesto';
+      return;
+    } else if(formError){
+      formError.remove();
     }
 
     // Enviamos a la planilla. Por una limitación de Google Apps Script (CORS),

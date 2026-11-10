@@ -1919,8 +1919,42 @@ function registrarClicWhatsApp(ubicacion){
   }catch(e){}
 }
 
+/* Visitantes que llegan desde Google Ads: el primer toque al botón flotante de
+   WhatsApp los lleva al formulario (con medidas). Si igual quieren WhatsApp,
+   un segundo toque o el enlace del aviso lo abren normalmente. */
+function desvioAFormulario(link, e){
+  try{
+    if((attribution.origen || '') !== 'google_ads') return false;
+    if(!link.classList.contains('wa-float')) return false;
+    if(sessionStorage.getItem('waDesvioHecho')) return false;
+    sessionStorage.setItem('waDesvioHecho', '1');
+  }catch(err){ return false; }
+  var form = document.getElementById('quoteForm');
+  var wrap = document.getElementById('presupuesto');
+  if(!form || !wrap || form.hidden) return false;
+  e.preventDefault();
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  var aviso = document.getElementById('waAviso');
+  if(!aviso){
+    aviso = document.createElement('p');
+    aviso.id = 'waAviso';
+    aviso.style.cssText = 'margin:0 0 12px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,122,26,.45);background:rgba(255,122,26,.10);font-size:.88rem;line-height:1.4';
+    aviso.innerHTML = 'Para cotizarte rápido, dejanos acá tus medidas y te respondemos por WhatsApp. <a href="' + link.href + '" target="_blank" rel="noopener" id="waAvisoLink" style="color:var(--fire-1);font-weight:700;white-space:nowrap">Prefiero escribir por WhatsApp →</a>';
+    form.parentNode.insertBefore(aviso, form);
+    var al = document.getElementById('waAvisoLink');
+    if(al) al.addEventListener('click', function(){
+      if(typeof gtag === 'function'){ gtag('event', 'whatsapp_click', { ubicacion: 'aviso-formulario' }); conversionAds('whatsapp'); }
+      registrarClicWhatsApp('aviso-formulario');
+    });
+  }
+  setTimeout(function(){ var n = form.querySelector('[name="nombre"]'); if(n) n.focus({ preventScroll: true }); }, 600);
+  if(typeof gtag === 'function') gtag('event', 'wa_desvio_formulario');
+  return true;
+}
+
 document.querySelectorAll('a[href*="wa.me"]').forEach(function(link){
-  link.addEventListener('click', function(){
+  link.addEventListener('click', function(e){
+    if(desvioAFormulario(link, e)) return;
     if(typeof gtag === 'function'){
       gtag('event', 'whatsapp_click', { ubicacion: link.className || 'link' });
       conversionAds('whatsapp');

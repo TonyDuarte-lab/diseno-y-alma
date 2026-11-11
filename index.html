@@ -1046,6 +1046,9 @@
 .cfg-chip.on{border-color:var(--fire-2);background:rgba(255,122,26,.16)}
 .cfg-chip.on::before{content:"✓";color:var(--fire-2);font-weight:700}
 .cfg-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,.3);display:inline-block}
+.cfg-sub{margin-top:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)}
+.cfg-sub small{display:block;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--fire-2);margin-bottom:6px}
+.cfg-equipo:not(.on){border-style:dashed;border-color:rgba(255,122,26,.5)}
 .cfg-help{font-size:.75rem;color:var(--text-dim);margin-top:5px}
 </style>
 </head>
@@ -1125,6 +1128,29 @@
               <button type="button" class="cfg-chip" data-v="Cajón cubiertero">Cajón cubiertero</button>
             </div>
             <p class="cfg-help" id="cfgHelp" hidden>Interior modular: sistema de levantamiento, brasero al costado y chapa que evita que se filtren las cenizas.</p>
+          </div>
+          <div class="cfg-group">
+            <label>Sumale a tu frente <small>(equipos, consultá precio por WhatsApp)</small></label>
+            <div class="cfg-chips" data-cfg="equipo">
+              <button type="button" class="cfg-chip cfg-equipo" data-v="Parrilla a gas">Parrilla a gas</button>
+              <button type="button" class="cfg-chip cfg-equipo" data-v="Anafe">Anafe</button>
+            </div>
+            <div class="cfg-sub" id="subPg" hidden>
+              <small>Parrilla a gas · ancho</small>
+              <div class="cfg-chips" data-cfg="pg" data-single>
+                <button type="button" class="cfg-chip" data-v="35 cm (1 quemador)">35 cm</button>
+                <button type="button" class="cfg-chip" data-v="63 cm (2 quemadores)">63 cm</button>
+                <button type="button" class="cfg-chip" data-v="91 cm (3 quemadores)">91 cm</button>
+                <button type="button" class="cfg-chip" data-v="120 cm (4 quemadores)">120 cm</button>
+              </div>
+            </div>
+            <div class="cfg-sub" id="subAn" hidden>
+              <small>Anafe · tamaño</small>
+              <div class="cfg-chips" data-cfg="an" data-single>
+                <button type="button" class="cfg-chip" data-v="semi industrial (2 hornallas)">Semi industrial</button>
+                <button type="button" class="cfg-chip" data-v="industrial (4 hornallas)">Industrial</button>
+              </div>
+            </div>
           </div>
           <div class="cfg-group">
             <label>Color <small>(pintura al horno)</small></label>
@@ -1755,11 +1781,19 @@ document.querySelectorAll('[data-cfg]').forEach(function(g){
     else { b.classList.toggle('on'); }
     const help = document.getElementById('cfgHelp');
     if(help) help.hidden = cfgElegidos('extras').indexOf('Interior de parrilla modular') < 0;
+    const eq = cfgElegidos('equipo');
+    const sp = document.getElementById('subPg'), sa = document.getElementById('subAn');
+    if(sp){ sp.hidden = eq.indexOf('Parrilla a gas') < 0; if(sp.hidden) sp.querySelectorAll('.cfg-chip').forEach(function(x){ x.classList.remove('on'); }); }
+    if(sa){ sa.hidden = eq.indexOf('Anafe') < 0; if(sa.hidden) sa.querySelectorAll('.cfg-chip').forEach(function(x){ x.classList.remove('on'); }); }
   });
 });
 const cfgTexto = function(){
   const ex = cfgElegidos('extras'); const col = cfgElegidos('color')[0] || '';
-  return 'Extras: ' + (ex.length ? ex.join(', ') : 'ninguno') + '. Color: ' + col + '.';
+  const eq = cfgElegidos('equipo').map(function(x){
+    const m = x === 'Parrilla a gas' ? cfgElegidos('pg')[0] : cfgElegidos('an')[0];
+    return m ? x + ' ' + m : x;
+  });
+  return 'Extras: ' + (ex.length ? ex.join(', ') : 'ninguno') + '. ' + (eq.length ? 'Equipos: ' + eq.join(', ') + '. ' : '') + 'Color: ' + col + '.';
 };
 
 const quoteForm = document.getElementById('quoteForm');

@@ -656,6 +656,15 @@
 
   /* ---------- ELEGÍ TU COLOR ---------- */
   .colors{background:var(--bg-2);border-top:1px solid rgba(255,255,255,0.10);border-bottom:1px solid rgba(255,255,255,0.10);}
+  .equipo-grid{display:grid;grid-template-columns:1fr;gap:26px;max-width:980px;margin:0 auto}
+  @media(min-width:760px){ .equipo-grid{grid-template-columns:repeat(2,1fr);} }
+  .equipo-card{border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.14);background:var(--bg-2)}
+  .equipo-card img{width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;display:block}
+  .equipo-info{padding:16px 18px 20px}
+  .equipo-info h3{font-size:1.05rem;letter-spacing:.02em;margin-bottom:4px}
+  .equipo-spec{font-size:.85rem;color:var(--text-dim);margin:8px 0 12px;min-height:2.6em}
+  .equipo-info .cfg-chips{margin-bottom:6px}
+  .equipo-info .btn{width:100%;justify-content:center;margin-top:8px}
   .colors-grid{
     display:grid;grid-template-columns:1fr;gap:26px;
   }
@@ -1046,6 +1055,9 @@
 .cfg-chip.on{border-color:var(--fire-2);background:rgba(255,122,26,.16)}
 .cfg-chip.on::before{content:"✓";color:var(--fire-2);font-weight:700}
 .cfg-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,.3);display:inline-block}
+.cfg-sub{margin-top:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)}
+.cfg-sub small{display:block;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--fire-2);margin-bottom:6px}
+.cfg-equipo:not(.on){border-style:dashed;border-color:rgba(255,122,26,.5)}
 .cfg-help{font-size:.75rem;color:var(--text-dim);margin-top:5px}
 </style>
 </head>
@@ -1072,6 +1084,7 @@
     <a href="#nosotros">Nosotros</a>
     <a href="#catalogo">Trabajos</a>
     <a href="#colores">Colores</a>
+    <a href="#equipos">Equipos</a>
     <a href="#proceso">Proceso</a>
     <a href="#presupuesto">Presupuesto</a>
     <a href="#contacto">Contacto</a>
@@ -1087,6 +1100,7 @@
   <a href="#nosotros">Nosotros</a>
   <a href="#catalogo">Trabajos</a>
   <a href="#colores">Colores</a>
+  <a href="#equipos">Equipos</a>
   <a href="#proceso">Proceso</a>
   <a href="#presupuesto">Presupuesto</a>
   <a href="#contacto">Contacto</a>
@@ -1125,6 +1139,29 @@
               <button type="button" class="cfg-chip" data-v="Cajón cubiertero">Cajón cubiertero</button>
             </div>
             <p class="cfg-help" id="cfgHelp" hidden>Interior modular: sistema de levantamiento, brasero al costado y chapa que evita que se filtren las cenizas.</p>
+          </div>
+          <div class="cfg-group">
+            <label>Sumale a tu frente <small>(equipos, consultá precio por WhatsApp)</small></label>
+            <div class="cfg-chips" data-cfg="equipo">
+              <button type="button" class="cfg-chip cfg-equipo" data-v="Parrilla a gas">Parrilla a gas</button>
+              <button type="button" class="cfg-chip cfg-equipo" data-v="Anafe">Anafe</button>
+            </div>
+            <div class="cfg-sub" id="subPg" hidden>
+              <small>Parrilla a gas · ancho</small>
+              <div class="cfg-chips" data-cfg="pg" data-single>
+                <button type="button" class="cfg-chip" data-v="35 cm (1 quemador)">35 cm</button>
+                <button type="button" class="cfg-chip" data-v="63 cm (2 quemadores)">63 cm</button>
+                <button type="button" class="cfg-chip" data-v="91 cm (3 quemadores)">91 cm</button>
+                <button type="button" class="cfg-chip" data-v="120 cm (4 quemadores)">120 cm</button>
+              </div>
+            </div>
+            <div class="cfg-sub" id="subAn" hidden>
+              <small>Anafe · tamaño</small>
+              <div class="cfg-chips" data-cfg="an" data-single>
+                <button type="button" class="cfg-chip" data-v="semi industrial (2 hornallas)">Semi industrial</button>
+                <button type="button" class="cfg-chip" data-v="industrial (4 hornallas)">Industrial</button>
+              </div>
+            </div>
           </div>
           <div class="cfg-group">
             <label>Color <small>(pintura al horno)</small></label>
@@ -1347,6 +1384,37 @@
 
   </div>
 </section>
+
+<section class="colors" id="equipos">
+  <div class="section-head" style="text-align:center;margin:0 auto 48px;">
+    <div class="eyebrow" style="justify-content:center;">Sumale a tu frente</div>
+    <h2>Equipá tu parrilla</h2>
+    <p style="margin:0 auto;">Elegí la medida y sumalo a tu presupuesto. Acero negro mate, pensado para integrarse a tu frente.</p>
+  </div>
+  <div class="equipo-grid">
+    <div class="equipo-card" data-equipo="Parrilla a gas">
+      <img loading="lazy" src="img/equipo-parrilla-63.webp" width="900" height="1125" decoding="async" alt="Parrilla a gas">
+      <div class="equipo-info">
+        <h3>Parrilla a gas</h3>
+        <p style="color:var(--text-dim);font-size:.9rem">Para cocinar a gas junto a tu parrilla a leña.</p>
+        <div class="cfg-chips"><button type="button" class="cfg-chip" data-img="img/equipo-parrilla-35.webp" data-v="35 cm (1 quemador)" data-spec="1 quemador · 35 × 35 × 60 cm">35 cm</button><button type="button" class="cfg-chip on" data-img="img/equipo-parrilla-63.webp" data-v="63 cm (2 quemadores)" data-spec="2 quemadores · 63 × 35 × 60 cm">63 cm</button><button type="button" class="cfg-chip" data-img="img/equipo-parrilla-91.webp" data-v="91 cm (3 quemadores)" data-spec="3 quemadores · 91 × 35 × 60 cm">91 cm</button><button type="button" class="cfg-chip" data-img="img/equipo-parrilla-120.webp" data-v="120 cm (4 quemadores)" data-spec="4 quemadores · 120 × 35 × 60 cm">120 cm</button></div>
+        <p class="equipo-spec">2 quemadores · 63 × 35 × 60 cm</p>
+        <button type="button" class="btn btn-primary equipo-add">Sumalo a mi frente</button>
+      </div>
+    </div>
+    <div class="equipo-card" data-equipo="Anafe">
+      <img loading="lazy" src="img/equipo-anafe-semi.webp" width="900" height="1125" decoding="async" alt="Anafe">
+      <div class="equipo-info">
+        <h3>Anafe</h3>
+        <p style="color:var(--text-dim);font-size:.9rem">Hornallas potentes para ollas y sartenes.</p>
+        <div class="cfg-chips"><button type="button" class="cfg-chip on" data-img="img/equipo-anafe-semi.webp" data-v="semi industrial (2 hornallas)" data-spec="2 hornallas · 35 × 22 × 62 cm">Semi industrial</button><button type="button" class="cfg-chip" data-img="img/equipo-anafe-industrial.webp" data-v="industrial (4 hornallas)" data-spec="4 hornallas · 70 × 22 × 70 cm">Industrial</button></div>
+        <p class="equipo-spec">2 hornallas · 35 × 22 × 62 cm</p>
+        <button type="button" class="btn btn-primary equipo-add">Sumalo a mi frente</button>
+      </div>
+    </div>
+  </div>
+</section>
+
 
 <section class="process" id="proceso">
   <div class="section-head" style="margin-bottom:0;">
@@ -1755,11 +1823,42 @@ document.querySelectorAll('[data-cfg]').forEach(function(g){
     else { b.classList.toggle('on'); }
     const help = document.getElementById('cfgHelp');
     if(help) help.hidden = cfgElegidos('extras').indexOf('Interior de parrilla modular') < 0;
+    const eq = cfgElegidos('equipo');
+    const sp = document.getElementById('subPg'), sa = document.getElementById('subAn');
+    if(sp){ sp.hidden = eq.indexOf('Parrilla a gas') < 0; if(sp.hidden) sp.querySelectorAll('.cfg-chip').forEach(function(x){ x.classList.remove('on'); }); }
+    if(sa){ sa.hidden = eq.indexOf('Anafe') < 0; if(sa.hidden) sa.querySelectorAll('.cfg-chip').forEach(function(x){ x.classList.remove('on'); }); }
+  });
+});
+document.querySelectorAll('.equipo-card').forEach(function(card){
+  card.addEventListener('click', function(e){
+    const b = e.target.closest('.cfg-chip');
+    if(b){
+      card.querySelectorAll('.cfg-chip').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      card.querySelector('img').src = b.getAttribute('data-img');
+      card.querySelector('.equipo-spec').textContent = b.getAttribute('data-spec');
+      return;
+    }
+    if(!e.target.closest('.equipo-add')) return;
+    const nombre = card.getAttribute('data-equipo');
+    const medida = card.querySelector('.cfg-chip.on').getAttribute('data-v');
+    const grupo = nombre === 'Parrilla a gas' ? 'pg' : 'an';
+    const eq = document.querySelector('[data-cfg="equipo"] .cfg-chip[data-v="' + nombre + '"]');
+    if(eq && !eq.classList.contains('on')) eq.click();
+    document.querySelectorAll('[data-cfg="' + grupo + '"] .cfg-chip').forEach(function(x){
+      x.classList.toggle('on', x.getAttribute('data-v') === medida);
+    });
+    const dest = document.getElementById('presupuesto');
+    if(dest) dest.scrollIntoView({behavior:'smooth', block:'start'});
   });
 });
 const cfgTexto = function(){
   const ex = cfgElegidos('extras'); const col = cfgElegidos('color')[0] || '';
-  return 'Extras: ' + (ex.length ? ex.join(', ') : 'ninguno') + '. Color: ' + col + '.';
+  const eq = cfgElegidos('equipo').map(function(x){
+    const m = x === 'Parrilla a gas' ? cfgElegidos('pg')[0] : cfgElegidos('an')[0];
+    return m ? x + ' ' + m : x;
+  });
+  return 'Extras: ' + (ex.length ? ex.join(', ') : 'ninguno') + '. ' + (eq.length ? 'Equipos: ' + eq.join(', ') + '. ' : '') + 'Color: ' + col + '.';
 };
 
 const quoteForm = document.getElementById('quoteForm');

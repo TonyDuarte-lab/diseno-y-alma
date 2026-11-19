@@ -1828,6 +1828,8 @@ function getVisitRef(){
   return ref;
 }
 const visitRef = getVisitRef();
+/* Campaña de Google Ads (viene en utm_campaign): solo para la planilla interna, no se muestra al cliente */
+function campTag(){ return attribution.utm_campaign ? ' [Camp: ' + String(attribution.utm_campaign).slice(0,30) + ']' : ''; }
 
 /* Traduce el código de origen a un texto claro para vos, incluido en el
    mensaje de WhatsApp — así sabés al toque a quién corresponde la comisión. */
@@ -1925,7 +1927,7 @@ if(quoteForm){
       producto_interes: fd.get('tipo_trabajo') || '',
       ancho: fd.get('ancho') || '',
       alto: fd.get('alto') || '',
-      mensaje: (cfgTexto() + ' ' + (fd.get('mensaje') || '').trim() + ' [Ref: ' + visitRef + ']').trim(),
+      mensaje: (cfgTexto() + ' ' + (fd.get('mensaje') || '').trim() + campTag() + ' [Ref: ' + visitRef + ']').trim(),
       origen: attribution.origen || 'directo',
       utm_source: attribution.utm_source || '',
       utm_medium: attribution.utm_medium || '',
@@ -2018,7 +2020,7 @@ if(quoteForm){
         'Localidad: ' + data.localidad,
         'Tipo de trabajo: ' + data.tipo_trabajo,
         (data.ancho || data.alto) ? ('Medidas aprox: ' + (data.ancho||'?') + 'cm x ' + (data.alto||'?') + 'cm') : null,
-        'Detalle: ' + data.mensaje.replace(/\s*\[Ref: [A-Z0-9]+\]$/, ''),
+        'Detalle: ' + data.mensaje.replace(/\s*(\[Camp: [^\]]*\]\s*)?\[Ref: [A-Z0-9]+\]$/, ''),
         'Origen: ' + attributionLabel(),
         'Ref: ' + visitRef
       ].filter(Boolean).join('\n');
@@ -2114,7 +2116,7 @@ function registrarClicWhatsApp(ubicacion){
     producto_interes: '',
     ancho: '',
     alto: '',
-    mensaje: 'Clic en WhatsApp (' + ubicacion + ') [Ref: ' + visitRef + ']',
+    mensaje: 'Clic en WhatsApp (' + ubicacion + ')' + campTag() + ' [Ref: ' + visitRef + ']',
     origen: attribution.origen || 'directo',
     utm_source: attribution.utm_source || '',
     utm_medium: attribution.utm_medium || '',

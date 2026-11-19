@@ -1835,6 +1835,7 @@ function campTag(){ return attribution.utm_campaign ? ' [Camp: ' + String(attrib
    mensaje de WhatsApp — así sabés al toque a quién corresponde la comisión. */
 function attributionLabel(){
   if(attribution.origen === 'google_ads') return 'Campaña Google';
+  if(attribution.origen === 'google_maps') return 'Google Maps';
   return 'Web';
 }
 
